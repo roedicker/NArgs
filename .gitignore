@@ -1,3 +1,7 @@
 *.suo
 *.user
 *.vs
+/src/NArgs/bin
+/src/NArgs/obj
+/src/NArgsTest/bin
+/src/NArgsTest/obj
