@@ -6,39 +6,31 @@ using NArgs.Models;
 namespace NArgs
 {
   /// <summary>
-  /// Defines the command tokenizer
+  /// Defines the command tokenizer.
   /// </summary>
   public interface ICommandTokenizer
   {
+
     /// <summary>
-    /// Gets the command arguments
+    /// Gets the command tokenizer options.
     /// </summary>
-    IEnumerable<CommandArgsItem> Items
+    TokenizeOptions Options
     {
       get;
     }
 
     /// <summary>
-    /// Gets the default command argument option indicator
-    /// </summary>
-    string ArgumentOptionDefaultNameIndicator
-    {
-      get;
-    }
-
-    /// <summary>
-    /// Gets the long name command argument option indicator
-    /// </summary>
-    string ArgumentOptionLongNameIndicator
-    {
-      get;
-    }
-
-    /// <summary>
-    /// Gets the parameters as command argument list
+    /// Gets the tokenized items based on a command argument list.
     /// </summary>
     /// <param name="args">Arguments to tokenize</param>
-    /// <returns>Command argument list of parameters</returns>
-    IEnumerable<CommandArgsItem> Tokenize(string[] args);
+    /// <returns>Tokenize items</returns>
+    IList<TokenizeItem> Tokenize(IEnumerable<string> args);
+
+    /// <summary>
+    /// Gets the tokenized items based on command argument list.
+    /// </summary>
+    /// <param name="args">Arguments to tokenize</param>
+    /// <returns>Tokenize items</returns>
+    IList<TokenizeItem> Tokenize(string args);
   }
 }

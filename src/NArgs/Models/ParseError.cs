@@ -48,15 +48,15 @@ namespace NArgs.Models
     /// <param name="message">Optional. Message of the pare error</param>
     internal ParseError(ParseErrorType errorType, string itemName, string? itemValue, string? message = null)
     {
-      if (String.IsNullOrWhiteSpace(itemName))
+      if (string.IsNullOrWhiteSpace(itemName))
       {
         throw new ArgumentException(Resources.MissingRequiredParameterValueErrorMessage, nameof(itemName));
       }
 
-      this.ErrorType = errorType;
-      this.ItemName = itemName;
-      this.ItemValue = itemValue;
-      this.Message = message ?? String.Empty;
+      ErrorType = errorType;
+      ItemName = itemName;
+      ItemValue = itemValue;
+      Message = message ?? string.Empty;
     }
   }
 }

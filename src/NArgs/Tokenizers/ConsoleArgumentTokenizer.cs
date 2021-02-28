@@ -1,191 +1,289 @@
 using System;
 using System.Collections.Generic;
-
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Text;
+using System.Text.RegularExpressions;
+using NArgs.Enumerations;
 using NArgs.Models;
 
 using NExtents;
 
+[assembly: InternalsVisibleToAttribute("NArgsTest")]
 namespace NArgs.Services
 {
-  internal class ConsoleArgumentTokenizer : ICommandTokenizer
+  /// <summary>
+  /// Console argument tokenizer.
+  /// </summary>
+  internal sealed class ConsoleArgumentTokenizer : ICommandTokenizer
   {
-    protected ParseOptions Options
+    /// <inheritdoc />
+    public TokenizeOptions Options
     {
       get;
     }
 
     /// <summary>
-    /// Gets the default command argument option indicator
+    /// Initializes a new instance of a <see cref="ConsoleArgumentTokenizer" /> class.
     /// </summary>
-    public string ArgumentOptionDefaultNameIndicator
-    {
-      get
-      {
-        return this.Options.ArgumentOptionDefaultNameIndicator;
-      }
-    }
-
-    /// <summary>
-    /// Gets the long name command argument option indicator
-    /// </summary>
-    public string ArgumentOptionLongNameIndicator
-    {
-      get
-      {
-        return this.Options.ArgumentOptionLongNameIndicator;
-      }
-    }
-
-    public IEnumerable<CommandArgsItem> Items
-    {
-      get;
-      private set;
-    }
-
     public ConsoleArgumentTokenizer()
     {
-      this.Items = new List<CommandArgsItem>();
-      this.Options = new ParseOptions();
+      Options = new TokenizeOptions();
     }
 
-    public ConsoleArgumentTokenizer(ParseOptions options) : this()
+    /// <summary>
+    /// Initializes a new instance of a <see cref="ConsoleArgumentTokenizer"/> class with options.
+    /// </summary>
+    /// <param name="options">Custom options to use for this console argument tokenizer.</param>
+    public ConsoleArgumentTokenizer(TokenizeOptions options) : this()
     {
-      this.Options = options ?? throw new ArgumentNullException(nameof(options));
+      Options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
-    public IEnumerable<CommandArgsItem> Tokenize(string[] args)
+    /// <inheritdoc />
+    public IList<TokenizeItem> Tokenize(IEnumerable<string> args)
     {
       if (args == null)
       {
         throw new ArgumentNullException(nameof(args));
       }
 
-      List<CommandArgsItem> Result = new List<CommandArgsItem>();
-      string sLastArgument = String.Empty;
+      var result = new List<TokenizeItem>();
+      var state = TokenizeState.ScanName;
 
-      foreach (string sCmdArg in args)
+      foreach (var arg in args)
       {
-        string sArgument = sCmdArg.Trim();
+        // remove leading or trailing whitespaces
+        var argument = arg.Trim();
 
-        if (String.IsNullOrWhiteSpace(sLastArgument))
+        // check for option
+        var isOption = argument.StartsWith(Options.ArgumentOptionNameIndicators);
+
+        var tokenBuilder = new StringBuilder();
+
+        try
         {
-          sLastArgument = sArgument;
-        }
-        else
-        {
-          switch (ProcessArguments(Result, sLastArgument, sArgument))
+          foreach (char character in argument)
           {
-            case 0:
+            if (state == TokenizeState.ScanName)
+            {
+              // check if current argument is an option
+              if (isOption)
+              {
+                if (Options.ArgumentOptionValueSeparators.Contains(character))
+                {
+                  AddNameItem(result, tokenBuilder);
+                  state = TokenizeState.ScanValue;
+                  continue;
+                }
+                else
+                {
+                  tokenBuilder.Append(character);
+                }
+              }
+              else if (character == Options.QuotationCharacter)
+              {
+                state = TokenizeState.ScanQuotedName;
+                continue;
+              }
+              else
+              {
+                tokenBuilder.Append(character);
+              }
+            }
+
+            if (state == TokenizeState.ScanBeginValue)
+            {
+              if (Options.Seperators.Contains(character))
+              {
+                continue;
+              }
+              else if (character == Options.QuotationCharacter)
+              {
+                state = TokenizeState.ScanQuotedName;
+                continue;
+              }
+              else if (Options.ArgumentOptionValueSeparators.Contains(character))
+              {
+                state = TokenizeState.ScanValue;
+                continue;
+              }
+              else
+              {
+                tokenBuilder.Append(character);
+                state = TokenizeState.ScanName;
+                continue;
+              }
+            }
+
+            if (state == TokenizeState.ScanValue)
+            {
+              if (character == Options.QuotationCharacter)
+              {
+                if (tokenBuilder.Length == 0)
+                {
+                  state = TokenizeState.ScanQuotedValue;
+                  continue;
+                }
+                else
+                {
+                  AddFailedItem(result, argument, TokenizeErrorType.InvalidCharacterInName, "Unexpected quotation in value detected");
+                  state = TokenizeState.ScanName;
+                  break;
+                }
+              }
+              else
+              {
+                tokenBuilder.Append(character);
+              }
+            }
+
+            if (state == TokenizeState.ScanQuotedName)
+            {
+              if (character == Options.QuotationCharacter)
+              {
+                AddNameItem(result, tokenBuilder, false);
+                state = TokenizeState.ScanName;
+                continue;
+              }
+              else
+              {
+                tokenBuilder.Append(character);
+              }
+            }
+
+            if (state == TokenizeState.ScanQuotedValue)
+            {
+              if (character == Options.QuotationCharacter)
+              {
+                AddValueItem(result, tokenBuilder);
+                state = TokenizeState.ScanName;
+                continue;
+              }
+              else
+              {
+                tokenBuilder.Append(character);
+              }
+            }
+          }
+
+          if (tokenBuilder.Length > 0)
+          {
+            switch (state)
+            {
+              case TokenizeState.ScanName:
+                AddNameItem(result, tokenBuilder);
+
+                if (isOption)
+                {
+                  state = TokenizeState.ScanBeginValue;
+                }
+
+                break;
+
+              case TokenizeState.ScanBeginValue:
+                AddNameItem(result, tokenBuilder);
+                state = TokenizeState.ScanName;
+                break;
+
+              case TokenizeState.ScanValue:
+                AddValueItem(result, tokenBuilder);
+                state = TokenizeState.ScanName;
+                break;
+
+              case TokenizeState.ScanQuotedName:
+              case TokenizeState.ScanQuotedValue:
+                AddFailedItem(result, argument, TokenizeErrorType.IncompleteQuotation, "Quoted item is incomplete");
+                state = TokenizeState.ScanName;
+                break;
+
+              default:
+                throw new NotSupportedException($@"State ""{state}"" is not supported");
+            }
+          }
+        }
+#pragma warning disable CA1031 // Do not catch general exception types
+        catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
+        {
+          switch (state)
+          {
+            case TokenizeState.ScanName:
+            case TokenizeState.ScanBeginValue:
+            case TokenizeState.ScanQuotedName:
+              AddFailedItem(result, tokenBuilder.ToString(), TokenizeErrorType.Unknown, ex.Message);
               break;
 
-            case 1:
-              sLastArgument = sArgument;
-              break;
-
-            case 2:
-              sLastArgument = String.Empty;
+            case TokenizeState.ScanValue:
+            case TokenizeState.ScanQuotedValue:
+              AddFailedItem(result, result.Last().Name, TokenizeErrorType.Unknown, ex.Message);
               break;
 
             default:
+              AddFailedItem(result, tokenBuilder.ToString(), TokenizeErrorType.Unknown, ex.Message);
               break;
           }
         }
       }
 
-      if (!String.IsNullOrWhiteSpace(sLastArgument))
-      {
-        if (ProcessArguments(Result, sLastArgument, null) != 1)
-        {
-          throw new Exception("Unknown error");
-        }
-      }
-
-      this.Items = Result;
-
-      return Result;
+      return result;
     }
 
-    private int ProcessArguments(List<CommandArgsItem> collection, string arg1, string? arg2)
+    /// <inheritdoc />
+    public IList<TokenizeItem> Tokenize(string args)
     {
-      int Result;
-
-      if (!String.IsNullOrWhiteSpace(arg1) && arg1.StartsWith(this.Options.GetArgumentOptionNameIndicators(), StringComparison.InvariantCultureIgnoreCase))
+      if (string.IsNullOrEmpty(args))
       {
-        int iPosOptionValueSeparator = arg1.IndexOf(this.Options.ArgumentOptionValueIndicator, StringComparison.OrdinalIgnoreCase);
-        string sOptionName;
-        string sOptionValue;
-
-        if (iPosOptionValueSeparator == -1)
-        {
-          // option name in arg1 available only - check arg2 for value
-          sOptionName = arg1;
-
-#pragma warning disable CS8604 // Possible null reference argument.
-          if (!String.IsNullOrWhiteSpace(arg2) && !arg2.StartsWith(this.Options.GetArgumentOptionNameIndicators(), StringComparison.InvariantCultureIgnoreCase))
-#pragma warning restore CS8604 // Possible null reference argument.
-          {
-            // arg2 contains a valid value
-            sOptionValue = arg2.Trim(this.Options.ArgumentQuotationCharacter);
-            Result = 2;
-          }
-          else
-          {
-            // arg2 contains either another option or has no value
-            sOptionValue = String.Empty;
-            Result = 1;
-          }
-        }
-        else
-        {
-          // option name and value in arg1 available - get value from remaining chunks
-          sOptionName = arg1.Substring(0, iPosOptionValueSeparator);
-          sOptionValue = arg1.Substring(iPosOptionValueSeparator + 1).Trim(this.Options.ArgumentQuotationCharacter);
-          Result = 1;
-        }
-
-        collection.Add(CreateCommandArgsItem(sOptionName, sOptionValue));
-      }
-      else
-      {
-        collection.Add(CreateCommandArgsItem(arg1, String.Empty));
-        Result = 1;
+        return new List<TokenizeItem>();
       }
 
-      return Result;
+      return Tokenize(args.Tokenize(Options.QuotationCharacter));
     }
 
-    internal CommandArgsItem CreateCommandArgsItem(string name, string value)
+    /// <summary>
+    /// Adds a new successful tokenize item to a list.
+    /// </summary>
+    /// <param name="list">Target list.</param>
+    /// <param name="builder">Token builder containing the token.</param>
+    /// <param name="trimValue">Optional. Indicator whether the value in the builder has to be trimmed or not. Default vaue is <see langword="true" />.</param>
+    /// <returns>New and empty <see cref="StringBuilder" /> instance.</returns>
+    private void AddNameItem(IList<TokenizeItem> list, StringBuilder builder, bool trimValue = true)
     {
-      if (String.IsNullOrWhiteSpace(name))
+      var name = trimValue ? builder.ToString().Trim(Options.Seperators) : builder.ToString();
+
+      if (!string.IsNullOrWhiteSpace(name))
       {
-        throw new ArgumentNullException(nameof(name));
+        list.Add(new TokenizeItem(name, null));
       }
 
-      name = name.Trim(this.Options.ArgumentQuotationCharacter).Trim();
+      builder.Clear();
+    }
 
-      CommandArgsItemType oItemType;
+    /// <summary>
+    /// Adds a new successful tokenize value to a the last list item.
+    /// </summary>
+    /// <param name="list">Target list.</param>
+    /// <param name="builder">Token builder containing the token.</param>
+    private void AddValueItem(IList<TokenizeItem> list, StringBuilder builder)
+    {
+      var value = builder.ToString();
 
-      if (name.StartsWith(this.Options.ArgumentOptionLongNameIndicator, StringComparison.Ordinal))
-      {
-        oItemType = CommandArgsItemType.OptionLongName;
-        name = name.TrimStart(this.Options.ArgumentOptionLongNameIndicator);
-      }
-      else if (name.StartsWith(this.Options.GetArgumentOptionNameIndicators()))
-      {
-        oItemType = CommandArgsItemType.Option;
-        name = name.TrimStart(this.Options.GetArgumentOptionNameIndicators());
-      }
-      else
-      {
-        oItemType = CommandArgsItemType.Parameter;
-      }
+      list.Last().Value = string.IsNullOrEmpty(value) ? null : value.Trim(Options.Seperators);
 
-      if (!String.IsNullOrWhiteSpace(value))
-      {
-        value = value.Trim(this.Options.ArgumentQuotationCharacter).Trim();
-      }
+      builder.Clear();
+    }
 
-      return new CommandArgsItem(oItemType, name, value);
+    /// <summary>
+    /// Adds a new failed tokenize item to a list.
+    /// </summary>
+    /// <param name="list">Target list.</param>
+    /// <param name="name">Name of the kokenize item to add.</param>
+    /// <param name="errorType">Error typpe of the failed item.</param>
+    /// <param name="errorMessage">Error message of the failed item.</param>
+    /// <returns>New and empty <see cref="StringBuilder" /> instance.</returns>
+    private static void AddFailedItem(IList<TokenizeItem> list, string name, TokenizeErrorType errorType, string? errorMessage = null)
+    {
+      list.Add(new TokenizeItem(name, errorType, errorMessage));
     }
   }
 }

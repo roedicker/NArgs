@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NArgs.Models
 {
@@ -36,13 +37,13 @@ namespace NArgs.Models
     {
       _Errors = new List<ParseError>();
 
-      this.Status = status;
+      Status = status;
     }
 
     /// <summary>
-    /// Adds an error to the command argument parse result
+    /// Adds an error to the command argument parse result.
     /// </summary>
-    /// <param name="error">Parse error to add</param>
+    /// <param name="error">Parse error to add.</param>
     internal void AddError(ParseError error)
     {
       if (error == null)
@@ -50,8 +51,30 @@ namespace NArgs.Models
         throw new ArgumentNullException(nameof(error));
       }
 
-      this.Status = ResultStatus.Failure;
+      Status = ResultStatus.Failure;
       _Errors.Add(error);
+    }
+
+    /// <summary>
+    /// Adds errors to the command argument parse result.
+    /// </summary>
+    /// <param name="errors">Parse errors to add.</param>
+    internal void AddErrors(IEnumerable<ParseError> errors)
+    {
+      if (errors == null)
+      {
+        throw new ArgumentNullException(nameof(errors));
+      }
+
+      if (errors.Any())
+      {
+        Status = ResultStatus.Failure;
+
+        foreach (ParseError error in errors)
+        {
+          _Errors.Add(error);
+        }
+      }
     }
 
     private readonly List<ParseError> _Errors;

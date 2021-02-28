@@ -5,12 +5,13 @@ namespace NArgs.Attributes
   /// <summary>
   /// Defines a command line parameter
   /// </summary>
+  [AttributeUsage(AttributeTargets.Property)]
   public class Parameter : Attribute
   {
     /// <summary>
     /// Gets or sets the ordinal number of a parameter
     /// </summary>
-    public int OrdinalNumber
+    public uint OrdinalNumber
     {
       get
       {
@@ -21,7 +22,7 @@ namespace NArgs.Attributes
       {
         if (value < 1)
         {
-          throw new ArgumentOutOfRangeException(nameof(this.OrdinalNumber));
+          throw new ArgumentOutOfRangeException(nameof(OrdinalNumber));
         }
 
         _OrdinalNumber = value;
@@ -51,11 +52,11 @@ namespace NArgs.Attributes
     /// </summary>
     public Parameter()
     {
-      this.OrdinalNumber = 1;
-      this.Name = String.Empty;
-      this.Description = String.Empty;
+      OrdinalNumber = 1;
+      Name = string.Empty;
+      Description = string.Empty;
     }
 
-    private int _OrdinalNumber;
+    private uint _OrdinalNumber;
   }
 }
