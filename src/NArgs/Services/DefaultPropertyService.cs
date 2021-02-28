@@ -12,12 +12,12 @@ using NExtents;
 namespace NArgs.Services
 {
   /// <summary>
-  /// Defines the default property service for parsing arguments
+  /// Defines the default property service for parsing arguments.
   /// </summary>
   public sealed class DefaultPropertyService : IPropertyService
   {
     /// <summary>
-    /// Gets the parse options
+    /// Gets the parse options.
     /// </summary>
     public ParseOptions Options
     {
@@ -25,23 +25,15 @@ namespace NArgs.Services
     }
 
     /// <summary>
-    /// Gets the configuration used for argument parsing
+    /// Gets the configuration used for argument parsing.
     /// </summary>
-    private object Config
+    private object Configuration
     {
-      get
-      {
-        if (_Config == null)
-        {
-          throw new InvalidOperationException(Resources.PropertyServiceNotInitializedErrorMessage);
-        }
-
-        return _Config;
-      }
+      get;
     }
 
     /// <summary>
-    /// Gets the dictionary of registered custom data-type handlers
+    /// Gets the dictionary of registered custom data-type handlers.
     /// </summary>
     private Dictionary<Type, CustomDataTypeHandler> CustomDataTypeHandlers
     {
@@ -49,61 +41,48 @@ namespace NArgs.Services
     }
 
     /// <summary>
-    /// Initializes a new instance of the default property service
+    /// Initializes a new instance of the default property service.
     /// </summary>
-    internal DefaultPropertyService()
+    /// <param name="configuration">Configuration attached to this property service.</param>
+    internal DefaultPropertyService(object configuration)
     {
-      this.Options = new ParseOptions();
-      this.CustomDataTypeHandlers = new Dictionary<Type, CustomDataTypeHandler>();
+      _AssignedOptions = new List<Option>();
+      Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+      Options = new ParseOptions();
+      CustomDataTypeHandlers = new Dictionary<Type, CustomDataTypeHandler>();
     }
 
     /// <summary>
-    /// Initializes a new instance of the default property service with custom parse options
+    /// Initializes a new instance of the default property service with custom parse options.
     /// </summary>
+    /// <param name="configuration">Configuration attached to this property service.</param>
     /// <param name="options"></param>
-    internal DefaultPropertyService(ParseOptions options) : this()
+    internal DefaultPropertyService(object configuration, ParseOptions options) : this(configuration)
     {
-      this.Options = options ?? throw new ArgumentNullException(nameof(options));
+      Options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
-    /// <summary>
-    /// Initializes the property service based on a given configuration
-    /// </summary>
-    /// <param name="config">Configuration to analyze</param>
-    public void Init(object config)
-    {
-      _Config = config ?? throw new ArgumentNullException(nameof(config));
-    }
-
-    /// <summary>
-    /// Gets all properties
-    /// </summary>
-    /// <returns>All properties based on used configuration</returns>
+    /// <inheritdoc />
     public IEnumerable<PropertyInfo> GetProperties()
     {
-      return this.Config.GetType().GetProperties();
+      return Configuration.GetType().GetProperties();
     }
 
-    /// <summary>
-    /// Gets the property type of an option by its name
-    /// </summary>
-    /// <param name="name">Option name</param>
-    /// <returns>Property type of given option name</returns>
-    /// <exception cref="ArgumentException">Option name is null or empty or option with given name does not exist</exception>
+    /// <inheritdoc />
     public Type GetPropertyTypeByOptionName(string name)
     {
-      if (String.IsNullOrWhiteSpace(name))
+      if (string.IsNullOrWhiteSpace(name))
       {
         throw new ArgumentException(Resources.MissingRequiredParameterValueErrorMessage, nameof(name));
       }
 
-      foreach (PropertyInfo oInfo in this.GetProperties())
+      foreach (var property in GetProperties())
       {
-        if (oInfo.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option oOption)
+        if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
         {
-          if (oOption.Name == name || oOption.AlternativeName == name || oOption.LongName == name)
+          if (option.Name == name || option.AlternativeName == name || option.LongName == name)
           {
-            return oInfo.PropertyType;
+            return property.PropertyType;
           }
         }
       }
@@ -111,36 +90,27 @@ namespace NArgs.Services
       throw new ArgumentException(Resources.OptionDoesNotExistErrorMessage, nameof(name));
     }
 
-    /// <summary>
-    /// Gets the property type-name of an option by its name
-    /// </summary>
-    /// <param name="name">Option name</param>
-    /// <returns>Property type-name of given option name</returns>
-    /// <exception cref="ArgumentException">Option name is null or empty or option with given name does not exist</exception>
+    /// <inheritdoc />
     public string GetPropertyTypeNameByOptionName(string name)
     {
       return GetPropertyTypeByOptionName(name).ToString();
     }
 
-    /// <summary>
-    /// Gets the property information of an option by its name
-    /// </summary>
-    /// <param name="name">Option name</param>
-    /// <returns>Property information of given option by its name</returns>
+    /// <inheritdoc />
     public PropertyInfo GetPropertyByOptionName(string name)
     {
-      if (String.IsNullOrWhiteSpace(name))
+      if (string.IsNullOrWhiteSpace(name))
       {
         throw new ArgumentException(Resources.MissingRequiredParameterValueErrorMessage, nameof(name));
       }
 
-      foreach (PropertyInfo oInfo in this.GetProperties())
+      foreach (var property in GetProperties())
       {
-        if (oInfo.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option oOption)
+        if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
         {
-          if (oOption.Name == name || oOption.AlternativeName == name || oOption.LongName == name)
+          if (option.Name == name || option.AlternativeName == name || option.LongName == name)
           {
-            return oInfo;
+            return property;
           }
         }
       }
@@ -148,21 +118,17 @@ namespace NArgs.Services
       throw new ArgumentException(Resources.OptionDoesNotExistErrorMessage, name);
     }
 
-    /// <summary>
-    /// Gets an indicator whether a property is stated as required or not
-    /// </summary>
-    /// <param name="info">Property information</param>
-    /// <returns><c>true</c> if property is stated as required, otherwise <c>false</c>.</returns>
-    public bool IsRequired(PropertyInfo info)
+    /// <inheritdoc />
+    public bool IsRequired(PropertyInfo property)
     {
-      if (info == null)
+      if (property == null)
       {
-        throw new ArgumentNullException(nameof(info));
+        throw new ArgumentNullException(nameof(property));
       }
 
-      if (info.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option oOption)
+      if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
       {
-        return oOption.Required;
+        return option.Required;
       }
       else
       {
@@ -170,46 +136,48 @@ namespace NArgs.Services
       }
     }
 
-    /// <summary>
-    /// Gets the name of an option by its property information
-    /// </summary>
-    /// <param name="info">Property information of an option</param>
-    /// <returns>Name of an option by its given property information</returns>
-    public string GetOptionName(PropertyInfo info)
-    {
-      if (info == null)
-      {
-        throw new ArgumentNullException(nameof(info));
-      }
-
-      if (info.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option oOption)
-      {
-        return oOption.Name ?? oOption.AlternativeName ?? oOption.LongName ?? String.Empty;
-      }
-      else
-      {
-        throw new ArgumentException(Resources.PropertyDoesNotHaveAnOptionAttributeErrorMessage, nameof(info));
-      }
-    }
-
-    /// <summary>
-    /// Sets a value of a property
-    /// </summary>
-    /// <param name="property">Property information</param>
-    /// <param name="value">Value to set</param>
-    public void SetPropertyValue(PropertyInfo property, string value)
+    /// <inheritdoc />
+    public string GetOptionName(PropertyInfo property)
     {
       if (property == null)
       {
         throw new ArgumentNullException(nameof(property));
       }
 
-      // if args has no value, property has to be of type "bool" - otherwise check type against given value
-      if (String.IsNullOrWhiteSpace(value))
+      if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
+      {
+        return option.Name ?? option.AlternativeName ?? option.LongName ?? string.Empty;
+      }
+      else
+      {
+        throw new ArgumentException(Resources.PropertyDoesNotHaveAnOptionAttributeErrorMessage, nameof(property));
+      }
+    }
+
+    /// <inheritdoc />
+    public IEnumerable<string> GetUnassignedRequiredOptionNames()
+    {
+      return GetProperties()
+             .Where(p => p.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option &&
+                         (option.Required &&
+                         !_AssignedOptions.Contains(option)))
+             .Select(p => (p.GetCustomAttributes(typeof(Option), true).FirstOrDefault() as Option)?.Name ?? Resources.NotApplicableValue);
+    }
+
+    /// <inheritdoc />
+    public void SetPropertyValue(PropertyInfo property, string? value)
+    {
+      if (property == null)
+      {
+        throw new ArgumentNullException(nameof(property));
+      }
+
+      // if argument has no value, property has to be of type "bool" - otherwise check type against given value
+      if (string.IsNullOrWhiteSpace(value))
       {
         if (property.PropertyType.FullName == PropertyTypeFullName.Boolean)
         {
-          property.SetValue(this.Config, true);
+          property.SetValue(Configuration, true);
         }
         else
         {
@@ -221,86 +189,90 @@ namespace NArgs.Services
         switch (property.PropertyType.FullName)
         {
           case PropertyTypeFullName.String:
-            property.SetValue(this.Config, value);
+            property.SetValue(Configuration, value);
             break;
 
           case PropertyTypeFullName.Boolean:
 
             if (IsBooleanTrueValue(value))
             {
-              property.SetValue(this.Config, true);
+              property.SetValue(Configuration, true);
             }
             else if (IsBooleanFalseValue(value))
             {
-              property.SetValue(this.Config, false);
+              property.SetValue(Configuration, false);
             }
             break;
 
           case PropertyTypeFullName.Char:
-            property.SetValue(this.Config, char.Parse(value));
+            property.SetValue(Configuration, char.Parse(value));
             break;
 
           case PropertyTypeFullName.DateTime:
-            property.SetValue(this.Config, DateTime.Parse(value, this.Options.Culture));
+            property.SetValue(Configuration, DateTime.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.Double:
-            property.SetValue(this.Config, double.Parse(value, this.Options.Culture));
+            property.SetValue(Configuration, double.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.Int16:
-            property.SetValue(this.Config, short.Parse(value, this.Options.Culture));
+            property.SetValue(Configuration, short.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.Int32:
-            property.SetValue(this.Config, int.Parse(value, this.Options.Culture));
+            property.SetValue(Configuration, int.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.Int64:
-            property.SetValue(this.Config, long.Parse(value, this.Options.Culture));
+            property.SetValue(Configuration, long.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.FileInfo:
-            property.SetValue(this.Config, new FileInfo(value));
+            property.SetValue(Configuration, new FileInfo(value));
             break;
 
           case PropertyTypeFullName.DirectoryInfo:
-            property.SetValue(this.Config, new DirectoryInfo(value));
+            property.SetValue(Configuration, new DirectoryInfo(value));
             break;
 
           case PropertyTypeFullName.Single:
-            property.SetValue(this.Config, float.Parse(value, this.Options.Culture));
+            property.SetValue(Configuration, float.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.UInt16:
-            property.SetValue(this.Config, ushort.Parse(value, this.Options.Culture));
+            property.SetValue(Configuration, ushort.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.UInt32:
-            property.SetValue(this.Config, uint.Parse(value, this.Options.Culture));
+            property.SetValue(Configuration, uint.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.UInt64:
-            property.SetValue(this.Config, ulong.Parse(value, this.Options.Culture));
+            property.SetValue(Configuration, ulong.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.Uri:
-            property.SetValue(this.Config, new Uri(value));
+            property.SetValue(Configuration, new Uri(value));
             break;
 
           default:
-            property.SetValue(this.Config, GetCustomDataTypeValue(property.PropertyType.GetType(), property.Name, value));
+            property.SetValue(Configuration, GetCustomDataTypeValue(property.PropertyType.GetType(), property.Name, value));
             break;
+        }
+
+        // set "assigned" flag if property is an option
+        if(property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
+        {
+          if(!_AssignedOptions.Contains(option))
+          {
+            _AssignedOptions.Add(option);
+          }
         }
       }
     }
 
-    /// <summary>
-    /// Adds a custom handler for a custom data-type
-    /// </summary>
-    /// <param name="type">Data type of the custom handler</param>
-    /// <param name="getter">Getter of the custom handler</param>
-    /// <param name="validator">Validator of the custom handler</param>
+    /// <inheritdoc />
     public void AddCustomDataTypeHandler(Type type, PropertyServiceCustomDataTypeGetter getter, PropertyServiceCustomDataTypeValidator validator)
     {
       if (type == null)
@@ -318,147 +290,137 @@ namespace NArgs.Services
         throw new ArgumentNullException(nameof(validator));
       }
 
-      this.CustomDataTypeHandlers.Add(type.GetType(), new CustomDataTypeHandler(getter, validator));
+      CustomDataTypeHandlers.Add(type.GetType(), new CustomDataTypeHandler(getter, validator));
     }
 
-    /// <summary>
-    /// Checks whether a value is valid for a given property or not
-    /// </summary>
-    /// <param name="info">Property information</param>
-    /// <param name="value">Value to validate</param>
-    /// <returns><c>true</c> if value is valid, otherwise <c>false</c>.</returns>
-    public bool IsValidValue(PropertyInfo info, string value)
+    /// <inheritdoc />
+    public bool IsValidValue(PropertyInfo property, string? value)
     {
-      if(info == null)
+      if (property == null)
       {
-        throw new ArgumentNullException(nameof(info));
+        throw new ArgumentNullException(nameof(property));
       }
 
-      bool Result;
-      bool bIsValueRequired = IsRequired(info);
+      bool result;
+      var isValueRequired = IsRequired(property);
 
       // if args has no value, property has to be of type "bool" - otherwise check type against given value
-      if (String.IsNullOrWhiteSpace(value))
+      if (value == null || string.IsNullOrWhiteSpace(value)) // just for the false positive CS8604
       {
-        if (info.PropertyType.FullName == PropertyTypeFullName.Boolean)
+        if (property.PropertyType.FullName == PropertyTypeFullName.Boolean)
         {
-          Result = true;
+          result = true;
         }
         else
         {
-          Result = false;
+          result = false;
         }
       }
       else
       {
-        switch (info.PropertyType.FullName)
+        switch (property.PropertyType.FullName)
         {
           case PropertyTypeFullName.Char:
-            Result = char.TryParse(value, out char _);
+            result = char.TryParse(value, out char _);
             break;
 
           case PropertyTypeFullName.String:
-            Result = true;
+            result = true;
             break;
 
           case PropertyTypeFullName.Boolean:
 
             if (IsBooleanTrueValue(value) || IsBooleanFalseValue(value))
             {
-              Result = true;
+              result = true;
             }
             else
             {
-              Result = false;
+              result = false;
             }
             break;
 
           case PropertyTypeFullName.DateTime:
-            Result = DateTime.TryParse(value, out DateTime _);
+            result = DateTime.TryParse(value, out DateTime _);
             break;
 
           case PropertyTypeFullName.DirectoryInfo:
-            Result = FileSystemInfo.IsValidDirectoryName(value);
+            result = FileSystemInfo.IsValidDirectoryName(value);
 
-            if (Result == true && bIsValueRequired)
+            if (result == true && isValueRequired)
             {
-              Result = Directory.Exists(value);
+              result = Directory.Exists(value);
             }
             break;
 
           case PropertyTypeFullName.Double:
-            Result = double.TryParse(value, out double _);
+            result = double.TryParse(value, out double _);
             break;
 
           case PropertyTypeFullName.Int16:
-            Result = short.TryParse(value, out short _);
+            result = short.TryParse(value, out short _);
             break;
 
           case PropertyTypeFullName.Int32:
-            Result = int.TryParse(value, out int _);
+            result = int.TryParse(value, out int _);
             break;
 
           case PropertyTypeFullName.Int64:
-            Result = long.TryParse(value, out long _);
+            result = long.TryParse(value, out long _);
             break;
 
           case PropertyTypeFullName.FileInfo:
-            Result = FileSystemInfo.IsValidFileName(value);
+            result = FileSystemInfo.IsValidFileName(value);
 
-            if (Result == true && bIsValueRequired)
+            if (result == true && isValueRequired)
             {
-              Result = File.Exists(value);
+              result = File.Exists(value);
             }
             break;
 
           case PropertyTypeFullName.Single:
-            Result = float.TryParse(value, out float _);
+            result = float.TryParse(value, out float _);
             break;
 
           case PropertyTypeFullName.UInt16:
-            Result = ushort.TryParse(value, out ushort _);
+            result = ushort.TryParse(value, out ushort _);
             break;
 
           case PropertyTypeFullName.UInt32:
-            Result = uint.TryParse(value, out uint _);
+            result = uint.TryParse(value, out uint _);
             break;
 
           case PropertyTypeFullName.UInt64:
-            Result = ulong.TryParse(value, out ulong _);
+            result = ulong.TryParse(value, out ulong _);
             break;
 
           case PropertyTypeFullName.Uri:
-            Result = Uri.IsWellFormedUriString(value, UriKind.RelativeOrAbsolute);
+            result = Uri.IsWellFormedUriString(value, UriKind.RelativeOrAbsolute);
             break;
 
           default:
-            Result = IsValidCustomDataTypeValue(info.PropertyType.GetType(), info.Name, value, IsRequired(info));
+            result = IsValidCustomDataTypeValue(property.PropertyType.GetType(), property.Name, value, IsRequired(property));
             break;
         }
       }
 
-      return Result;
+      return result;
     }
 
-    /// <summary>
-    /// Gets an indicator whether an option value is valid or not
-    /// </summary>
-    /// <param name="name">Name of the option</param>
-    /// <param name="value">Value of the option</param>
-    /// <returns><c>true</c> if option value is valid, otherwise <c>false</c>.</returns>
-    public bool IsValidOptionValue(string name, string value)
+    /// <inheritdoc />
+    public bool IsValidOptionValue(string name, string? value)
     {
-      PropertyInfo oInfo = GetPropertyByOptionName(name);
+      var property = GetPropertyByOptionName(name);
 
-      if (oInfo == null)
+      if (property == null)
       {
         return false;
       }
       else
       {
-        if (oInfo.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option _)
+        if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option _)
         {
-          return this.IsValidValue(oInfo, value);
+          return IsValidValue(property, value);
         }
         else
         {
@@ -468,76 +430,76 @@ namespace NArgs.Services
     }
 
     /// <summary>
-    /// Gets an indicator whether a given value represents a boolean false-value or not
+    /// Gets an indicator whether a given value represents a boolean false-value or not.
     /// </summary>
-    /// <param name="value">Value to validate</param>
-    /// <returns><c>true</c> if given value represents a boolean false-value, otherwise <c>false</c>.</returns>
-    private bool IsBooleanFalseValue(string value)
+    /// <param name="value">Value to validate.</param>
+    /// <returns><see langword="true" /> if given value represents a boolean false-value, otherwise <see langword="false" />.</returns>
+    private static bool IsBooleanFalseValue(string? value)
     {
       return new string[] { "n", "no", "false", "off", "0" }.Contains(value, StringComparer.InvariantCultureIgnoreCase);
     }
 
     /// <summary>
-    /// Gets an indicator whether a given value represents a boolean true-value or not
+    /// Gets an indicator whether a given value represents a boolean true-value or not.
     /// </summary>
-    /// <param name="value">Value to validate</param>
-    /// <returns><c>true</c> if given value represents a boolean true-value, otherwise <c>false</c>.</returns>
-    private bool IsBooleanTrueValue(string value)
+    /// <param name="value">Value to validate.</param>
+    /// <returns><see langword="true" /> if given value represents a boolean true-value, otherwise <see langword="false" />.</returns>
+    private static bool IsBooleanTrueValue(string? value)
     {
       return new string[] { "y", "yes", "true", "on", "1" }.Contains(value, StringComparer.InvariantCultureIgnoreCase);
     }
 
 
     /// <summary>
-    /// Gets an indication whether a command value is valid for a custom data-ytpe or not
+    /// Gets an indication whether a command value is valid for a custom data-type or not.
     /// </summary>
-    /// <param name="type">Custom data-type</param>
-    /// <param name="name">Property name</param>
-    /// <param name="value">Command value</param>
-    /// <param name="required">Indicator whether that value has to be required or not</param>
-    /// <returns><c>true</c> if custom data-ytpe is valid, otherwise <c>false</c></returns>
-    private bool IsValidCustomDataTypeValue(Type type, string name, string value, bool required)
+    /// <param name="type">Custom data-type.</param>
+    /// <param name="name">Property name.</param>
+    /// <param name="value">Command value.</param>
+    /// <param name="required">Indicator whether that value has to be required or not.</param>
+    /// <returns><see langword="true" /> if custom data-ytpe is valid, otherwise <see langword="false" />.</returns>
+    private bool IsValidCustomDataTypeValue(Type type, string name, string? value, bool required)
     {
-      bool Result = false;
+      var result = false;
 
-      if (this.CustomDataTypeHandlers.ContainsKey(type))
+      if (CustomDataTypeHandlers.ContainsKey(type))
       {
-        CustomDataTypeHandler oHandlerSet = this.CustomDataTypeHandlers[type];
+        CustomDataTypeHandler oHandlerSet = CustomDataTypeHandlers[type];
 
-        Result = oHandlerSet.Validator(name, value, required);
+        result = oHandlerSet.Validator(name, value, required);
       }
 
-      return Result;
+      return result;
     }
 
     /// <summary>
-    /// Gets the value of a custom data-type based on a command value
+    /// Gets the value of a custom data-type based on a command value.
     /// </summary>
-    /// <param name="type">Custom data-type</param>
-    /// <param name="name">Property name</param>
-    /// <param name="value">Command value of the property</param>
-    /// <returns>Value of custom data-type based on a command value</returns>
-    private object? GetCustomDataTypeValue(Type type, string name, string value)
+    /// <param name="type">Custom data-type.</param>
+    /// <param name="name">Property name.</param>
+    /// <param name="value">Command value of the property.</param>
+    /// <returns>Value of custom data-type based on a command value.</returns>
+    private object? GetCustomDataTypeValue(Type type, string name, string? value)
     {
       object? Result = null;
 
-      if (this.CustomDataTypeHandlers.ContainsKey(type))
+      if (CustomDataTypeHandlers.ContainsKey(type))
       {
-        CustomDataTypeHandler oHandler = this.CustomDataTypeHandlers[type];
+        var handler = CustomDataTypeHandlers[type];
 
-        Result = oHandler.Getter(name, value);
+        Result = handler.Getter(name, value);
       }
 
       return Result;
     }
 
     /// <summary>
-    /// Defines a custom data-type handler
+    /// Defines a custom data-type handler.
     /// </summary>
     private class CustomDataTypeHandler
     {
       /// <summary>
-      /// Gets or sets the property getter of a custom data-type handler
+      /// Gets or sets the property getter of a custom data-type handler.
       /// </summary>
       public PropertyServiceCustomDataTypeGetter Getter
       {
@@ -546,7 +508,7 @@ namespace NArgs.Services
       }
 
       /// <summary>
-      /// Gets or sets the property validator of a custom data-type handler
+      /// Gets or sets the property validator of a custom data-type handler.
       /// </summary>
       public PropertyServiceCustomDataTypeValidator Validator
       {
@@ -555,17 +517,17 @@ namespace NArgs.Services
       }
 
       /// <summary>
-      /// Creates a new instance of the custom data-type handler
+      /// Initializes a new instance of the <see cref="CustomDataTypeHandler" /> class.
       /// </summary>
-      /// <param name="getter">Getter for custom data-type property</param>
-      /// <param name="validator">validator for custom data-type property</param>
+      /// <param name="getter">Getter for custom data-type property.</param>
+      /// <param name="validator">validator for custom data-type property.</param>
       public CustomDataTypeHandler(PropertyServiceCustomDataTypeGetter getter, PropertyServiceCustomDataTypeValidator validator)
       {
-        this.Getter = getter ?? throw new ArgumentNullException(nameof(getter));
-        this.Validator = validator ?? throw new ArgumentNullException(nameof(validator));
+        Getter = getter ?? throw new ArgumentNullException(nameof(getter));
+        Validator = validator ?? throw new ArgumentNullException(nameof(validator));
       }
     }
 
-    private object? _Config;
+    private List<Option> _AssignedOptions;
   }
 }

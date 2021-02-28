@@ -19,7 +19,7 @@ namespace NArgs
     {
       bool Result = true;
 
-      if (String.IsNullOrWhiteSpace(name))
+      if (string.IsNullOrWhiteSpace(name))
       {
         Result = false;
       }
@@ -58,7 +58,7 @@ namespace NArgs
     {
       bool Result = true;
 
-      if (String.IsNullOrWhiteSpace(name))
+      if (string.IsNullOrWhiteSpace(name))
       {
         Result = false;
       }

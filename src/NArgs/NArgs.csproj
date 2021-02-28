@@ -17,7 +17,7 @@
     <PackageProjectUrl>https://github.com/roedicker/NArgs/wiki</PackageProjectUrl>
     <RepositoryUrl>https://github.com/roedicker/NArgs</RepositoryUrl>
     <PackageReleaseNotes>Added support for .NET Standard 2.1
-    Added support for &quot;Commands&quot;
+    Added support for "Commands"
     </PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
@@ -27,12 +27,14 @@
     <Nullable>enable</Nullable>
     <MinClientVersion>2.12</MinClientVersion>
     <IncludeSymbols>true</IncludeSymbols>
-    <CodeAnalysisRuleset>NArgs.ruleset</CodeAnalysisRuleset>
+    <CodeAnalysisRuleset></CodeAnalysisRuleset>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
   <ItemGroup>
     <None Remove="**\*.orig" />
+    <None Remove="NArgs.ruleset" />
     <None Include="..\..\LICENSE.md" Pack="true" PackagePath="LICENSE.md" />
+    <None Include="..\NArgs.ruleset" Link="NArgs.ruleset" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="3.3.1">
@@ -40,8 +42,9 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NCollections" Version="1.1.0" />
-    <PackageReference Include="NExtents" Version="1.1.0" />
+    <PackageReference Include="NExtents" Version="1.4.1" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Resources\Resources.Designer.cs">

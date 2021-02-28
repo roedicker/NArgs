@@ -20,25 +20,22 @@ namespace NArgs
     /// <summary>
     /// Parses command line arguments
     /// </summary>
-    /// <param name="config">Configuration to store parsed arguments</param>
     /// <param name="args">Arguments as an array</param>
     /// <returns>Parse result</returns>
-    ParseResult ParseArguments(object config, string[] args);
+    ParseResult ParseArguments(string[] args);
 
     /// <summary>
     /// Parses command line arguments
     /// </summary>
-    /// <param name="config">Configuration to store parsed arguments</param>
     /// <param name="args">Arguments as a command line</param>
     /// <returns>Parse result</returns>
-    ParseResult ParseArguments(object config, string args);
+    ParseResult ParseArguments(string args);
 
     /// <summary>
     /// Gets a formatted string based on the used configuration
     /// </summary>
-    /// <param name="config">Configuration to store parsed arguments</param>
     /// <param name="executable">Name of the current executable used in formatted output</param>
     /// <returns>Formatted output based on the configuration and current name of the executable</returns>
-    string GetUsage(object config, string executable);
+    string GetUsage(string executable);
   }
 }

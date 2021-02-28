@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 using StringCollection = NCollections.StringCollection;
+
+using NExtents;
 
 using NArgs.Attributes;
 using NArgs.Exceptions;
@@ -14,12 +17,12 @@ using NArgs.Models;
 namespace NArgs
 {
   /// <summary>
-  /// Defines the base command line parser
+  /// Defines the base command line parser.
   /// </summary>
-  public abstract class CommandLineParser
+  public abstract class CommandLineParser : IArgumentParser
   {
     /// <summary>
-    /// Gets or sets the property service
+    /// Gets or sets the property service.
     /// </summary>
     protected IPropertyService PropertyService
     {
@@ -27,7 +30,7 @@ namespace NArgs
     }
 
     /// <summary>
-    /// Gets or sets the tokenizer
+    /// Gets or sets the tokenizer.
     /// </summary>
     protected ICommandTokenizer Tokenizer
     {
@@ -35,147 +38,49 @@ namespace NArgs
     }
 
     /// <summary>
-    /// Creates a new instance of the base command line parser
+    /// Gets the argument parse options
     /// </summary>
-    /// <param name="propertyService">Property service of the command line parse</param>
-    /// <param name="tokenizer">Command argument tokenizer</param>
-    protected CommandLineParser(IPropertyService propertyService, ICommandTokenizer tokenizer)
+    public ParseOptions Options
     {
-      this.PropertyService = propertyService ?? throw new ArgumentNullException(nameof(propertyService));
-      this.Tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
+      get;
     }
 
     /// <summary>
-    /// Parses the command line arguments
+    /// Initializes a new instance of a <see cref="CommandLineParser" /> class.
     /// </summary>
-    /// <returns>Parse result</returns>
-    internal ParseResult ParseCommandLine()
+    /// <param name="tokenizer">Command argument tokenizer.</param>
+    /// <param name="propertyService">Property service.</param>
+    protected CommandLineParser(ICommandTokenizer tokenizer, IPropertyService propertyService)
     {
-      ParseResult Result = new ParseResult();
-      int iParameterNumber = 1;
+      Tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
+      PropertyService = propertyService ?? throw new ArgumentNullException(nameof(propertyService));
+      Options = new ParseOptions();
+    }
 
-      try
-      {
-        // check plausibility: Options must follow parameters 
-        bool bOptionsAvailable = false;
+    /// <summary>
+    /// Initializes a new instance of a <see cref="CommandLineParser" /> class with custom options.
+    /// </summary>
+    /// <param name="tokenizer">Command argument tokenizer.</param>
+    /// <param name="propertyService">Property service.</param>
+    /// <param name="options">Commandline parser options to use.</param>
+    protected CommandLineParser(ICommandTokenizer tokenizer, IPropertyService propertyService, ParseOptions options) : this(tokenizer, propertyService)
+    {
+      Options = options ?? throw new ArgumentNullException(nameof(options));
+    }
 
-        foreach (CommandArgsItem oItem in this.Tokenizer.Items)
-        {
-          if (oItem.ItemType == CommandArgsItemType.Parameter)
-          {
-            if (bOptionsAvailable)
-            {
-              Result.AddError(new ParseError(ParseErrorType.InvalidCommandArgsFormat, oItem.Name, oItem.Value, Resources.ParametersMustPrecedeAnyOptionsErrorMessage));
-            }
-          }
-          else
-          {
-            bOptionsAvailable = true;
-          }
-        }
+    /// <summary>
+    /// Parses the command line arguments.
+    /// </summary>
+    /// <returns>Parse result.</returns>
+    virtual public ParseResult ParseArguments(string[] args)
+    {
+      return ParseItems(Tokenizer.Tokenize(args));
+    }
 
-        // process parameters
-        foreach (CommandArgsItem oItem in this.Tokenizer.Items)
-        {
-          try
-          {
-            foreach (System.Reflection.PropertyInfo oInfo in this.PropertyService.GetProperties())
-            {
-              if (oInfo.GetCustomAttributes(typeof(Parameter), true).FirstOrDefault() is Parameter oParameter && oParameter.OrdinalNumber == iParameterNumber)
-              {
-                if (oItem.ItemType == CommandArgsItemType.Parameter)
-                {
-                  this.PropertyService.SetPropertyValue(oInfo, oItem.Name);
-                  iParameterNumber++;
-                  break;
-                }
-              }
-            }
-          }
-          catch (Exception ex)
-          {
-            Result.AddError(new ParseError(ParseErrorType.UnknownError, oItem.Name, oItem.Value, ex.Message));
-          }
-        }
-
-        // process options
-        foreach (System.Reflection.PropertyInfo oInfo in this.PropertyService.GetProperties())
-        {
-          try
-          {
-            bool bOptionProcessed = false;
-
-            if (oInfo.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option oOption)
-            {
-              foreach (CommandArgsItem oItem in this.Tokenizer.Items)
-              {
-                switch (oItem.ItemType)
-                {
-                  case CommandArgsItemType.Option:
-
-                    if (oOption.Name == oItem.Name || oOption.AlternativeName == oItem.Name)
-                    {
-                      if (this.PropertyService.IsValidOptionValue(oItem.Name, oItem.Value))
-                      {
-                        this.PropertyService.SetPropertyValue(oInfo, oItem.Value);
-                        bOptionProcessed = true;
-                      }
-                      else
-                      {
-                        Result.AddError(new ParseError(ParseErrorType.InvalidOptionValue, oItem.Name, oItem.Value, String.Format(CultureInfo.InvariantCulture, Resources.ValueIsInvalidForOptionFormatErrorMessage, oItem.Value, oItem.Name)));
-                      }
-                    }
-
-                    break;
-
-                  case CommandArgsItemType.OptionLongName:
-
-                    if (oOption.LongName == oItem.Name)
-                    {
-                      if (this.PropertyService.IsValidOptionValue(oItem.Name, oItem.Value))
-                      {
-                        this.PropertyService.SetPropertyValue(oInfo, oItem.Value);
-                        bOptionProcessed = true;
-                      }
-                      else
-                      {
-                        Result.AddError(new ParseError(ParseErrorType.InvalidOptionValue, oItem.Name, oItem.Value, String.Format(CultureInfo.InvariantCulture, Resources.ValueIsInvalidForOptionFormatErrorMessage, oItem.Value, oItem.Name)));
-                      }
-                    }
-
-                    break;
-                }
-
-                if (bOptionProcessed)
-                {
-                  break;
-                }
-              }
-            }
-
-            if (!bOptionProcessed && this.PropertyService.IsRequired(oInfo))
-            {
-              string sOptionName = this.PropertyService.GetOptionName(oInfo);
-
-              Result.AddError(new ParseError(ParseErrorType.RequiredOptionValue, sOptionName, null, String.Format(CultureInfo.InvariantCulture, Resources.OptionIsMissingRequiredValueFormatErrorMessage, sOptionName)));
-            }
-          }
-          catch (Exception ex)
-          {
-            Result.AddError(new ParseError(ParseErrorType.UnknownError, Resources.NotAvailableShortName, null, ex.Message));
-          }
-        }
-      }
-      catch (InvalidCommandArgsFormatException ex)
-      {
-        Result.AddError(new ParseError(ParseErrorType.InvalidCommandArgsFormat, ex.ItemName, null, ex.Message));
-      }
-      catch (Exception ex)
-      {
-        Result.AddError(new ParseError(ParseErrorType.UnknownError, Resources.NotAvailableShortName, null, ex.Message));
-      }
-
-      return Result;
+    /// <inheritdoc />
+    public ParseResult ParseArguments(string args)
+    {
+      return ParseItems(Tokenizer.Tokenize(args));
     }
 
     /// <summary>
@@ -183,127 +88,342 @@ namespace NArgs
     /// </summary>
     /// <param name="executable">Current executable name</param>
     /// <returns>Usage output for the current configuration</returns>
-    internal string GetUsage(string executable)
+    public virtual string GetUsage(string executable)
     {
-      StringBuilder Result = new StringBuilder();
-      List<Parameter> lstParameters = new List<Parameter>();
-      StringCollection colParametersSyntaxUsage = new StringCollection();
-      StringDictionary dicOptions = new StringDictionary();
-      StringCollection colOptionsSyntaxUsage = new StringCollection();
-      int iMaxParameterNameLength = 0;
-      int iMaxOptionCompleteNameLength = 0;
+      executable ??= string.Empty;
 
-      foreach (System.Reflection.PropertyInfo oInfo in this.PropertyService.GetProperties())
+      var result = new StringBuilder();
+      var parameters = new List<Parameter>();
+      using var usageSyntaxText = new StringCollection();
+      using var optionsSyntaxText = new StringCollection();
+      var options = new StringDictionary();
+      var maxParameterNameLength = 0;
+      var maxOptionCompleteNameLength = 0;
+
+      foreach (var property in PropertyService.GetProperties())
       {
-        if (oInfo.GetCustomAttributes(typeof(Parameter), true).FirstOrDefault() is Parameter oParameter)
+        if (property.GetCustomAttributes(typeof(Parameter), true).FirstOrDefault() is Parameter parameter)
         {
-          lstParameters.Add(oParameter);
+          parameters.Add(parameter);
 
-          if (oParameter.Name?.Length > iMaxParameterNameLength)
+          if (parameter.Name?.Length > maxParameterNameLength)
           {
-            iMaxParameterNameLength = (int)oParameter.Name.Length;
+            maxParameterNameLength = (int)parameter.Name.Length;
           }
         }
         else
         {
-          if (oInfo.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option oOption)
+          if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option oOption)
           {
-            StringCollection colOptionNames = new StringCollection();
+            using var optionNames = new StringCollection();
 
-            if (!String.IsNullOrWhiteSpace(oOption.Name))
+            if (!string.IsNullOrWhiteSpace(oOption.Name))
             {
-              colOptionNames.AddDistinct($"{this.Tokenizer.ArgumentOptionDefaultNameIndicator}{oOption.Name}");
+              optionNames.AddDistinct($"{TokenizeOptions.ArgumentOptionDefaultNameIndicator}{oOption.Name}");
             }
 
-            if (!String.IsNullOrWhiteSpace(oOption.AlternativeName))
+            if (!string.IsNullOrWhiteSpace(oOption.AlternativeName))
             {
-              colOptionNames.AddDistinct($"{this.Tokenizer.ArgumentOptionDefaultNameIndicator}{oOption.AlternativeName}");
+              optionNames.AddDistinct($"{TokenizeOptions.ArgumentOptionDefaultNameIndicator}{oOption.AlternativeName}");
             }
 
-            if (!String.IsNullOrWhiteSpace(oOption.LongName))
+            if (!string.IsNullOrWhiteSpace(oOption.LongName))
             {
-              colOptionNames.AddDistinct($"{this.Tokenizer.ArgumentOptionLongNameIndicator}{oOption.LongName}");
+              optionNames.AddDistinct($"{TokenizeOptions.ArgumentOptionLongNameIndicator}{oOption.LongName}");
             }
 
-            string sOptionCompleteName = colOptionNames.ToString(" | ");
+            var optionCompleteName = optionNames.ToString(" | ");
 
             if (oOption.Required)
             {
-              if (oInfo.PropertyType.FullName == PropertyTypeFullName.Boolean)
+              if (property.PropertyType.FullName == PropertyTypeFullName.Boolean)
               {
-                colOptionsSyntaxUsage.Add($"{sOptionCompleteName}");
+                optionsSyntaxText.Add($"{optionCompleteName}");
               }
               else
               {
-                colOptionsSyntaxUsage.Add($"{sOptionCompleteName} <{oOption.UsageTypeDisplayName}>");
+                optionsSyntaxText.Add($"{optionCompleteName} <{oOption.UsageTypeDisplayName}>");
               }
             }
             else
             {
-              if (oInfo.PropertyType.FullName == PropertyTypeFullName.Boolean)
+              if (property.PropertyType.FullName == PropertyTypeFullName.Boolean)
               {
-                colOptionsSyntaxUsage.Add($"[{sOptionCompleteName}]");
+                optionsSyntaxText.Add($"[{optionCompleteName}]");
               }
               else
               {
-                colOptionsSyntaxUsage.Add($"[{sOptionCompleteName} <{oOption.UsageTypeDisplayName}>]");
+                optionsSyntaxText.Add($"[{optionCompleteName} <{oOption.UsageTypeDisplayName}>]");
               }
             }
 
-            dicOptions.Add(sOptionCompleteName, String.IsNullOrWhiteSpace(oOption.Description) ? Resources.NotApplicableValue : oOption.Description);
+            options.Add(optionCompleteName, string.IsNullOrWhiteSpace(oOption.Description) ? Resources.NotApplicableValue : oOption.Description);
 
-            if (sOptionCompleteName.Length > iMaxOptionCompleteNameLength)
+            if (optionCompleteName.Length > maxOptionCompleteNameLength)
             {
-              iMaxOptionCompleteNameLength = sOptionCompleteName.Length;
+              maxOptionCompleteNameLength = optionCompleteName.Length;
             }
           }
         }
       }
 
       // sort parameters by their ordinal numbers
-      lstParameters.Sort((l, r) => l.OrdinalNumber.CompareTo(r.OrdinalNumber));
+      parameters.Sort((l, r) => l.OrdinalNumber.CompareTo(r.OrdinalNumber));
 
-      Result.AppendLine($"{Resources.SyntaxCapitalizedName}:");
-      Result.Append($"  {executable} ");
+      result.AppendLine($"{Resources.SyntaxCapitalizedName}:");
+      result.Append($"  {executable} ");
 
-      if (lstParameters.Count > 0)
+      if (parameters.Count > 0)
       {
-        foreach (Parameter oParameter in lstParameters)
+        foreach (var parameter in parameters)
         {
-          Result.AppendFormat(CultureInfo.InvariantCulture, "<{0}> ", String.IsNullOrWhiteSpace(oParameter.Name) ? Resources.NotApplicableValue : oParameter.Name);
+          result.AppendFormat(CultureInfo.InvariantCulture, "<{0}> ", string.IsNullOrWhiteSpace(parameter.Name) ? Resources.NotApplicableValue : parameter.Name);
         }
       }
 
       StringBuilder sbIndention = new StringBuilder();
 
-      for (int i = 0; i < executable.Length + 3; i++)
+      for (var i = 0; i < executable.Length + 3; i++)
       {
         sbIndention.Append(' ');
       }
 
-      Result.Append($"{colOptionsSyntaxUsage.ToString($"{Environment.NewLine}{sbIndention}")}{Environment.NewLine}");
+      result.Append($"{optionsSyntaxText.ToString($"{Environment.NewLine}{sbIndention}")}{Environment.NewLine}");
 
-      if (lstParameters.Count > 0)
+      if (parameters.Count > 0)
       {
-        Result.AppendLine($"{Environment.NewLine}{Resources.ParametersCapitalizedName}:");
+        result.AppendLine($"{Environment.NewLine}{Resources.ParametersCapitalizedName}:");
 
-        foreach (Parameter oParameter in lstParameters)
+        foreach (var parameter in parameters)
         {
-          Result.AppendFormat(CultureInfo.InvariantCulture, "  {0, " + Convert.ToString(-iMaxParameterNameLength, CultureInfo.InvariantCulture) + "}     {1}{2}", String.IsNullOrWhiteSpace(oParameter.Name) ? "n/a" : oParameter.Name, String.IsNullOrWhiteSpace(oParameter.Description) ? "n/a" : oParameter.Description, Environment.NewLine);
+          result.AppendFormat(CultureInfo.InvariantCulture, "  {0, " + Convert.ToString(-maxParameterNameLength, CultureInfo.InvariantCulture) + "}     {1}{2}", string.IsNullOrWhiteSpace(parameter.Name) ? "n/a" : parameter.Name, string.IsNullOrWhiteSpace(parameter.Description) ? "n/a" : parameter.Description, Environment.NewLine);
         }
       }
 
-      if (dicOptions.Count > 0)
+      if (options.Count > 0)
       {
-        Result.AppendLine($"{Environment.NewLine}{Resources.OptionsCapitalizedName}:");
+        result.AppendLine($"{Environment.NewLine}{Resources.OptionsCapitalizedName}:");
 
-        foreach (string sKey in dicOptions.Keys)
+        foreach (string key in options.Keys)
         {
-          Result.AppendFormat(CultureInfo.InvariantCulture, "  {0, " + Convert.ToString(-iMaxOptionCompleteNameLength, CultureInfo.InvariantCulture) + "}     {1}{2}", sKey, dicOptions[sKey], Environment.NewLine);
+          result.AppendFormat(CultureInfo.InvariantCulture, "  {0, " + Convert.ToString(-maxOptionCompleteNameLength, CultureInfo.InvariantCulture) + "}     {1}{2}", key, options[key], Environment.NewLine);
         }
       }
 
-      return Result.ToString();
+      return result.ToString();
+    }
+
+    /// <inheritdoc />
+    public void RegisterCustomDataTypeHandler(Type type, PropertyServiceCustomDataTypeGetter setter, PropertyServiceCustomDataTypeValidator validator)
+    {
+      AddCustomDataTypeHandler(type, setter, validator);
+    }
+
+    private ParseResult ParseItems(IList<TokenizeItem> items)
+    {
+      if (items == null)
+      {
+        throw new ArgumentNullException(nameof(items));
+      }
+
+      var result = new ParseResult();
+
+      try
+      {
+        // check if tokenizing failed
+        if (items.Any(item => item.Failed))
+        {
+          result.AddErrors(items.Where(item => item.Failed)
+                                .Select(item => new ParseError(ParseErrorType.InvalidCommandArgsFormat,
+                                                               item.Name,
+                                                               item.Value,
+                                                               item.ErrorMessage)));
+
+          return result;
+        }
+
+        // TODO: Perform plausibility checks regarding identical option names and/or parameter ordinals
+
+        uint ordinalNumber = 1;
+
+        for (int i = 0; i < items.Count; i++)
+        {
+          var item = items[i];
+          TokenizeItem? nextItem = (i + 1) < items.Count ? items[i + 1] : null;
+
+          // perform plausibility checks
+          if (string.IsNullOrWhiteSpace(item.Name))
+          {
+            result.AddError(new ParseError(ParseErrorType.InvalidCommandArgsFormat, item.Name, item.Value, "Required name is missing"));
+          }
+
+          // check if item refers to an option
+          var property = DetermineOptionProperty(item);
+
+          if (property != null)
+          {
+            // check if item contains directly a value or not
+            if (string.IsNullOrEmpty(item.Value))
+            {
+              // special handling of boolean options: Either no value (treat as true) or optional following value
+              if (property.PropertyType == typeof(bool))
+              {
+                // check if next item (if available) is a boolean value (use it) or not (ignore it)
+                if (PropertyService.IsValidValue(property, nextItem?.Name))
+                {
+                  PropertyService.SetPropertyValue(property, nextItem?.Name);
+                  i++;
+                }
+                else
+                {
+                  PropertyService.SetPropertyValue(property, true.ToLowerString());
+                }
+              }
+              else
+              {
+                // option refers not to a boolean - validate value (next item)
+                if (PropertyService.IsValidValue(property, nextItem?.Name))
+                {
+                  PropertyService.SetPropertyValue(property, nextItem?.Name);
+                }
+                else
+                {
+                  result.AddError(new ParseError(ParseErrorType.InvalidOptionValue,
+                                                 GetOptionName(item.Name),
+                                                 nextItem?.Name,
+                                                 string.Format(CultureInfo.InvariantCulture,
+                                                               Resources.ValueIsInvalidForOptionFormatErrorMessage,
+                                                               nextItem?.Name,
+                                                               GetOptionName(item.Name))));
+                }
+
+                i++;
+              }
+            }
+            else
+            {
+              if (PropertyService.IsValidValue(property, item.Value))
+              {
+                PropertyService.SetPropertyValue(property, item.Value);
+              }
+              else
+              {
+                result.AddError(new ParseError(ParseErrorType.InvalidOptionValue,
+                                               GetOptionName(item.Name),
+                                               item.Value,
+                                               string.Format(CultureInfo.InvariantCulture,
+                                                             Resources.ValueIsInvalidForOptionFormatErrorMessage,
+                                                             item.Value,
+                                                             GetOptionName(item.Name))));
+              }
+            }
+          }
+          else
+          {
+            // check if item refers to a parameter
+            property = DetermineParameterProperty(ordinalNumber);
+
+            if (property == null)
+            {
+              // item neither refers to an option nor a parameter
+              result.AddError(new ParseError(ParseErrorType.InvalidCommandArgsFormat, item.Name, item.Value, "Argument does not match any option or parameter"));
+              continue;
+            }
+            else
+            {
+              if (PropertyService.IsValidValue(property, item.Name))
+              {
+                PropertyService.SetPropertyValue(property, item.Name);
+              }
+              else
+              {
+                result.AddError(new ParseError(ParseErrorType.InvalidParameterValue, property.Name, item.Name));
+                continue;
+              }
+
+              ordinalNumber++;
+            }
+          }
+        }
+
+        // perform check for required values
+        var plausibiltyResult = CheckRequiredProperties();
+
+        if (plausibiltyResult.Status == ResultStatus.Failure)
+        {
+          result.AddErrors(plausibiltyResult.Errors);
+        }
+      }
+      catch (InvalidCommandArgsFormatException ex)
+      {
+        result.AddError(new ParseError(ParseErrorType.InvalidCommandArgsFormat, ex.ItemName, null, ex.Message));
+      }
+#pragma warning disable CA1031 // Do not catch general exception types
+      catch (Exception ex)
+#pragma warning restore CA1031 // Do not catch general exception types
+      {
+        result.AddError(new ParseError(ParseErrorType.UnknownError, Resources.NotAvailableShortName, null, ex.Message));
+      }
+
+      return result;
+    }
+
+    private PropertyInfo? DetermineOptionProperty(TokenizeItem item)
+    {
+      // check if current token is an option
+      var itemName = item.Name.TrimStart(new[] { TokenizeOptions.ArgumentOptionLongNameIndicator,
+                                                 TokenizeOptions.ArgumentOptionAlternativeNameIndicator,
+                                                 TokenizeOptions.ArgumentOptionDefaultNameIndicator
+                                               });
+
+      return PropertyService.GetProperties()
+                            .FirstOrDefault(p => p.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option &&
+                                                 (option.Name == itemName ||
+                                                  option.AlternativeName == itemName ||
+                                                  option.LongName == itemName
+                                                 ));
+    }
+
+    private ParseResult CheckRequiredProperties()
+    {
+      var result = new ParseResult();
+
+      result.AddErrors(PropertyService.GetUnassignedRequiredOptionNames()
+                                      .Select(name => new ParseError(ParseErrorType.RequiredOptionValue,
+                                                                  name,
+                                                                  Resources.NotApplicableValue,
+                                                                  string.Format(CultureInfo.InvariantCulture,
+                                                                                Resources.OptionIsMissingRequiredValueFormatErrorMessage,
+                                                                                name))));
+
+      return result;
+    }
+
+    private PropertyInfo? DetermineParameterProperty(uint ordinalNumber)
+    {
+      return PropertyService.GetProperties()
+                                 .FirstOrDefault(p => p.GetCustomAttributes(typeof(Parameter), true).FirstOrDefault() is Parameter parameter && parameter.OrdinalNumber == ordinalNumber);
+    }
+
+    /// <summary>
+    /// Adds a custom data-type handler
+    /// </summary>
+    /// <param name="type">Data-type to be handled</param>
+    /// <param name="setter">Setter of the custom data-type</param>
+    /// <param name="validator">Validator of the custom data-type</param>
+    internal void AddCustomDataTypeHandler(Type type, PropertyServiceCustomDataTypeGetter setter, PropertyServiceCustomDataTypeValidator validator)
+    {
+      PropertyService.AddCustomDataTypeHandler(type, setter, validator);
+    }
+
+    /// <summary>
+    /// Gets the name of an option.
+    /// </summary>
+    /// <param name="itemName">Item name.</param>
+    /// <returns>Option name of an item name.</returns>
+    private string GetOptionName(string itemName)
+    {
+      return itemName?.Trim(Tokenizer.Options.ArgumentOptionNameIndicators) ?? string.Empty;
     }
   }
 }

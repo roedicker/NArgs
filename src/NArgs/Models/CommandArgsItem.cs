@@ -39,9 +39,9 @@ namespace NArgs.Models
     /// </summary>
     public CommandArgsItem()
     {
-      this.ItemType = CommandArgsItemType.NotSet;
-      this.Name = String.Empty;
-      this.Value = String.Empty;
+      ItemType = CommandArgsItemType.NotSet;
+      Name = string.Empty;
+      Value = string.Empty;
     }
 
     /// <summary>
@@ -52,9 +52,9 @@ namespace NArgs.Models
     /// <param name="value">Value of the command argument</param>
     public CommandArgsItem(CommandArgsItemType itemType, string name, string value)
     {
-      this.ItemType = itemType;
-      this.Name = name;
-      this.Value = value;
+      ItemType = itemType;
+      Name = name;
+      Value = value;
     }
   }
 }

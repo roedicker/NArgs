@@ -33,7 +33,7 @@ namespace NArgs.Exceptions
     internal InvalidCommandArgsFormatException() : base()
     {
       _Message = ExceptionMessage;
-      this.ItemName = ItemDefaultName;
+      ItemName = ItemDefaultName;
     }
 
     /// <summary>
@@ -43,7 +43,7 @@ namespace NArgs.Exceptions
     /// <param name="itemName">Optional. Item name of the exception</param>
     internal InvalidCommandArgsFormatException(string message, string? itemName = null) : base(message)
     {
-      if (String.IsNullOrWhiteSpace(message))
+      if (string.IsNullOrWhiteSpace(message))
       {
         _Message = ExceptionMessage;
       }
@@ -52,7 +52,7 @@ namespace NArgs.Exceptions
         _Message = $"{ExceptionMessage}. {message}";
       }
 
-      this.ItemName = String.IsNullOrWhiteSpace(itemName) ? ItemDefaultName : itemName ?? ItemDefaultName; // to avoid FX Cop warnings only
+      ItemName = string.IsNullOrWhiteSpace(itemName) ? ItemDefaultName : itemName ?? ItemDefaultName; // to avoid FX Cop warnings only
     }
 
     /// <summary>
@@ -63,7 +63,7 @@ namespace NArgs.Exceptions
     /// <param name="innerException">Inner exception</param>
     internal InvalidCommandArgsFormatException(string message, string itemName, Exception innerException) : base(message, innerException)
     {
-      if (String.IsNullOrWhiteSpace(message))
+      if (string.IsNullOrWhiteSpace(message))
       {
         _Message = ExceptionMessage;
       }
@@ -72,13 +72,13 @@ namespace NArgs.Exceptions
         _Message = $"{ExceptionMessage}. {message}";
       }
 
-      if (String.IsNullOrWhiteSpace(itemName))
+      if (string.IsNullOrWhiteSpace(itemName))
       {
-        this.ItemName = ItemDefaultName;
+        ItemName = ItemDefaultName;
       }
       else
       {
-        this.ItemName = itemName;
+        ItemName = itemName;
       }
     }
 
