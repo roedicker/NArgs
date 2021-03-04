@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -50,6 +51,8 @@ namespace NArgs.Services
       Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
       Options = new ParseOptions();
       CustomDataTypeHandlers = new Dictionary<Type, CustomDataTypeHandler>();
+
+      ValidateConfiguration();
     }
 
     /// <summary>
@@ -262,9 +265,9 @@ namespace NArgs.Services
         }
 
         // set "assigned" flag if property is an option
-        if(property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
+        if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
         {
-          if(!_AssignedOptions.Contains(option))
+          if (!_AssignedOptions.Contains(option))
           {
             _AssignedOptions.Add(option);
           }
@@ -491,6 +494,109 @@ namespace NArgs.Services
       }
 
       return Result;
+    }
+
+    /// <summary>
+    /// Validates the referenced configuration.
+    /// </summary>
+    private void ValidateConfiguration()
+    {
+      var optionNames = new List<string>();
+      var parameterNames = new List<string>();
+      var parameterOrdinals = new List<uint>();
+
+      foreach (PropertyInfo property in GetProperties())
+      {
+        if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
+        {
+          // check for required and duplicate option names
+          if (string.IsNullOrWhiteSpace(option.Name))
+          {
+            throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                                  Resources.OptionIsMissingRequiredNameFormatErrorMessage,
+                                                                  property.Name));
+          }
+
+          if (optionNames.Contains(option.Name.ToUpperInvariant()))
+          {
+            throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                                  Resources.OptionNameAlreadyUsedFormatErrorMessage,
+                                                                  option.Name));
+          }
+          else
+          {
+            optionNames.Add(option.Name.ToUpperInvariant());
+          }
+
+          if (!string.IsNullOrWhiteSpace(option.AlternativeName))
+          {
+            if (optionNames.Contains(option.AlternativeName.ToUpperInvariant()))
+            {
+              throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                                    Resources.OptionAlternativeNameAlreadyUsedFormatErrorMessage,
+                                                                    option.AlternativeName));
+            }
+            else
+            {
+              optionNames.Add(option.AlternativeName.ToUpperInvariant());
+            }
+          }
+
+          if (!string.IsNullOrWhiteSpace(option.LongName))
+          {
+            if (optionNames.Contains(option.LongName.ToUpperInvariant()))
+            {
+              throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                                    Resources.OptionLongNameAlreadyUsedFormatErrorMessage,
+                                                                    option.LongName));
+            }
+            else
+            {
+              optionNames.Add(option.LongName.ToUpperInvariant());
+            }
+          }
+        }
+        else if (property.GetCustomAttributes(typeof(Parameter), true).FirstOrDefault() is Parameter parameter)
+        {
+          // check for duplicate parameter names
+          if (!string.IsNullOrWhiteSpace(parameter.Name))
+          {
+            if (parameterNames.Contains(parameter.Name.ToUpperInvariant()))
+            {
+              throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                                    Resources.ParameterNameAlreadyUsedFormatErrorMessage,
+                                                                    parameter.Name));
+            }
+            else
+            {
+              parameterNames.Add(parameter.Name.ToUpperInvariant());
+            }
+          }
+
+          // check for duplicate parameter ordinals
+          if (parameterOrdinals.Contains(parameter.OrdinalNumber))
+          {
+            throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                                  Resources.ParameterOrdinalAlreadyUsedFormatErrorMessage,
+                                                                  parameter.OrdinalNumber));
+          }
+          else
+          {
+            parameterOrdinals.Add(parameter.OrdinalNumber);
+          }
+        }
+      }
+
+      if (parameterOrdinals.Any())
+      {
+        // check for correct ordinal sequence (starting at #1)
+        parameterOrdinals.Sort();
+
+        if (parameterOrdinals.First() != 1 || parameterOrdinals.Last() != parameterOrdinals.Count)
+        {
+          throw new InvalidConfigurationException(Resources.ParameterOrdinalNotUsedInSequenceErrorMessage);
+        }
+      }
     }
 
     /// <summary>

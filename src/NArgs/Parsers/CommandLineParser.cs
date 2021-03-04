@@ -11,7 +11,6 @@ using StringCollection = NCollections.StringCollection;
 using NExtents;
 
 using NArgs.Attributes;
-using NArgs.Exceptions;
 using NArgs.Models;
 
 namespace NArgs
