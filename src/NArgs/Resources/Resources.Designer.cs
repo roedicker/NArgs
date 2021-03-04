@@ -97,11 +97,29 @@ namespace NArgs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Option alternative name &quot;{0}&quot; has already been used.
+        /// </summary>
+        internal static string OptionAlternativeNameAlreadyUsedFormatErrorMessage {
+            get {
+                return ResourceManager.GetString("OptionAlternativeNameAlreadyUsedFormatErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Option with that given name does not exist.
         /// </summary>
         internal static string OptionDoesNotExistErrorMessage {
             get {
                 return ResourceManager.GetString("OptionDoesNotExistErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Option for property &quot;{0}&quot; is missing its required name.
+        /// </summary>
+        internal static string OptionIsMissingRequiredNameFormatErrorMessage {
+            get {
+                return ResourceManager.GetString("OptionIsMissingRequiredNameFormatErrorMessage", resourceCulture);
             }
         }
         
@@ -115,11 +133,56 @@ namespace NArgs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Option long name &quot;{0}&quot; has already been used.
+        /// </summary>
+        internal static string OptionLongNameAlreadyUsedFormatErrorMessage {
+            get {
+                return ResourceManager.GetString("OptionLongNameAlreadyUsedFormatErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Option name &quot;{0}&quot; has already been used.
+        /// </summary>
+        internal static string OptionNameAlreadyUsedFormatErrorMessage {
+            get {
+                return ResourceManager.GetString("OptionNameAlreadyUsedFormatErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to OPTIONS.
         /// </summary>
         internal static string OptionsCapitalizedName {
             get {
                 return ResourceManager.GetString("OptionsCapitalizedName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parameter name &quot;{0}&quot; has already been used.
+        /// </summary>
+        internal static string ParameterNameAlreadyUsedFormatErrorMessage {
+            get {
+                return ResourceManager.GetString("ParameterNameAlreadyUsedFormatErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parameter ordinal number {0} has already been used.
+        /// </summary>
+        internal static string ParameterOrdinalAlreadyUsedFormatErrorMessage {
+            get {
+                return ResourceManager.GetString("ParameterOrdinalAlreadyUsedFormatErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parameter ordinal numbers are not used in sequence.
+        /// </summary>
+        internal static string ParameterOrdinalNotUsedInSequenceErrorMessage {
+            get {
+                return ResourceManager.GetString("ParameterOrdinalNotUsedInSequenceErrorMessage", resourceCulture);
             }
         }
         

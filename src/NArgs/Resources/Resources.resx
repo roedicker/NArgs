@@ -129,14 +129,35 @@
   <data name="NotAvailableShortName" xml:space="preserve">
     <value>n/a</value>
   </data>
+  <data name="OptionAlternativeNameAlreadyUsedFormatErrorMessage" xml:space="preserve">
+    <value>Option alternative name "{0}" has already been used</value>
+  </data>
   <data name="OptionDoesNotExistErrorMessage" xml:space="preserve">
     <value>Option with that given name does not exist</value>
+  </data>
+  <data name="OptionIsMissingRequiredNameFormatErrorMessage" xml:space="preserve">
+    <value>Option for property "{0}" is missing its required name</value>
   </data>
   <data name="OptionIsMissingRequiredValueFormatErrorMessage" xml:space="preserve">
     <value>Option "{0}" is missing a required value</value>
   </data>
+  <data name="OptionLongNameAlreadyUsedFormatErrorMessage" xml:space="preserve">
+    <value>Option long name "{0}" has already been used</value>
+  </data>
+  <data name="OptionNameAlreadyUsedFormatErrorMessage" xml:space="preserve">
+    <value>Option name "{0}" has already been used</value>
+  </data>
   <data name="OptionsCapitalizedName" xml:space="preserve">
     <value>OPTIONS</value>
+  </data>
+  <data name="ParameterNameAlreadyUsedFormatErrorMessage" xml:space="preserve">
+    <value>Parameter name "{0}" has already been used</value>
+  </data>
+  <data name="ParameterOrdinalAlreadyUsedFormatErrorMessage" xml:space="preserve">
+    <value>Parameter ordinal number {0} has already been used</value>
+  </data>
+  <data name="ParameterOrdinalNotUsedInSequenceErrorMessage" xml:space="preserve">
+    <value>Parameter ordinal numbers are not used in sequence</value>
   </data>
   <data name="ParametersCapitalizedName" xml:space="preserve">
     <value>PARAMETERS</value>

@@ -46,6 +46,16 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="PropertyServiceTests\Data\DuplicateOptionLongNameConfiguration.cs" />
+    <Compile Include="PropertyServiceTests\Data\DuplicateOptionAlternativeNameConfiguration.cs" />
+    <Compile Include="PropertyServiceTests\Data\DuplicateOptionNameConfiguration.cs" />
+    <Compile Include="PropertyServiceTests\Data\DuplicateParameterNameConfiguration.cs" />
+    <Compile Include="PropertyServiceTests\Data\DuplicateParameterOrdinalNumberConfiguration.cs" />
+    <Compile Include="PropertyServiceTests\Data\InvalidParameterOrdinalNumberSequenceConfiguration.cs" />
+    <Compile Include="PropertyServiceTests\Data\InvalidParameterOrdinalNumberConfiguration.cs" />
+    <Compile Include="PropertyServiceTests\Data\MissingOptionNameConfiguration.cs" />
+    <Compile Include="PropertyServiceTests\DefaultPropertyServiceTests\OptionTests.cs" />
+    <Compile Include="PropertyServiceTests\DefaultPropertyServiceTests\ParameterTests.cs" />
     <Compile Include="SimpleValidConfigTests.cs" />
     <Compile Include="Data\Color.cs" />
     <Compile Include="Data\CustomDataTypeConfig.cs" />
@@ -75,6 +85,7 @@
       <Version>2.1.2</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
