@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 
 using NArgs.Attributes;
+using NArgs.Extensions;
 using NArgs.Models;
 
 using NExtents;
@@ -17,6 +18,9 @@ namespace NArgs.Services
   /// </summary>
   public sealed class DefaultPropertyService : IPropertyService
   {
+    private readonly List<OptionAttribute> _AssignedOptions;
+    private object? _CurrentCommandConfiguration;
+
     /// <summary>
     /// Gets the parse options.
     /// </summary>
@@ -42,12 +46,12 @@ namespace NArgs.Services
     }
 
     /// <summary>
-    /// Initializes a new instance of the default property service.
+    /// Initializes a new instance of the <see cref="DefaultPropertyService" /> class.
     /// </summary>
     /// <param name="configuration">Configuration attached to this property service.</param>
     internal DefaultPropertyService(object configuration)
     {
-      _AssignedOptions = new List<Option>();
+      _AssignedOptions = new List<OptionAttribute>();
       Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
       Options = new ParseOptions();
       CustomDataTypeHandlers = new Dictionary<Type, CustomDataTypeHandler>();
@@ -56,7 +60,7 @@ namespace NArgs.Services
     }
 
     /// <summary>
-    /// Initializes a new instance of the default property service with custom parse options.
+    /// Initializes a new instance of the <see cref="DefaultPropertyService" /> class with custom parse options.
     /// </summary>
     /// <param name="configuration">Configuration attached to this property service.</param>
     /// <param name="options"></param>
@@ -68,7 +72,27 @@ namespace NArgs.Services
     /// <inheritdoc />
     public IEnumerable<PropertyInfo> GetProperties()
     {
-      return Configuration.GetType().GetProperties();
+      return GetCurrentConfiguration()
+             .GetType()
+             .GetProperties();
+    }
+
+    /// <inheritdoc />
+    public bool HasCommands()
+    {
+      return GetProperties().Any(prop => prop.IsCommand());
+    }
+
+    /// <inheritdoc />
+    public bool HasOptions()
+    {
+      return GetProperties().Any(prop => prop.IsOption());
+    }
+
+    /// <inheritdoc />
+    public bool HasParameters()
+    {
+      return GetProperties().Any(prop => prop.IsParameter());
     }
 
     /// <inheritdoc />
@@ -81,7 +105,7 @@ namespace NArgs.Services
 
       foreach (var property in GetProperties())
       {
-        if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
+        if (property.GetCustomAttributes(typeof(OptionAttribute), true).FirstOrDefault() is OptionAttribute option)
         {
           if (option.Name == name || option.AlternativeName == name || option.LongName == name)
           {
@@ -109,7 +133,7 @@ namespace NArgs.Services
 
       foreach (var property in GetProperties())
       {
-        if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
+        if (property.GetCustomAttributes(typeof(OptionAttribute), true).FirstOrDefault() is OptionAttribute option)
         {
           if (option.Name == name || option.AlternativeName == name || option.LongName == name)
           {
@@ -122,14 +146,36 @@ namespace NArgs.Services
     }
 
     /// <inheritdoc />
-    public bool IsRequired(PropertyInfo property)
+    public PropertyInfo GetPropertyByCommandName(string name)
     {
-      if (property == null)
+      if (string.IsNullOrWhiteSpace(name))
       {
-        throw new ArgumentNullException(nameof(property));
+        throw new ArgumentException(Resources.MissingRequiredParameterValueErrorMessage, nameof(name));
       }
 
-      if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
+      foreach (var property in GetProperties())
+      {
+        if (property.GetCustomAttributes(typeof(CommandAttribute), true).FirstOrDefault() is CommandAttribute command)
+        {
+          if (command.Name == name)
+          {
+            return property;
+          }
+        }
+      }
+
+      throw new ArgumentException(Resources.CommandDoesNotExistErrorMessage, name);
+    }
+
+    /// <inheritdoc />
+    public bool IsRequired(PropertyInfo prop)
+    {
+      if (prop == null)
+      {
+        throw new ArgumentNullException(nameof(prop));
+      }
+
+      if (prop.GetCustomAttributes(typeof(OptionAttribute), true).FirstOrDefault() is OptionAttribute option)
       {
         return option.Required;
       }
@@ -140,132 +186,186 @@ namespace NArgs.Services
     }
 
     /// <inheritdoc />
-    public string GetOptionName(PropertyInfo property)
+    public string GetOptionName(PropertyInfo prop)
     {
-      if (property == null)
+      if (prop == null)
       {
-        throw new ArgumentNullException(nameof(property));
+        throw new ArgumentNullException(nameof(prop));
       }
 
-      if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
+      var option = GetOption(prop);
+
+      return option.Name ?? option.AlternativeName ?? option.LongName ?? string.Empty;
+    }
+
+    /// <inheritdoc />
+    public OptionAttribute GetOption(PropertyInfo prop)
+    {
+      if (prop == null)
       {
-        return option.Name ?? option.AlternativeName ?? option.LongName ?? string.Empty;
+        throw new ArgumentNullException(nameof(prop));
       }
-      else
+
+      return prop.GetCustomAttributes(typeof(OptionAttribute), true).FirstOrDefault() as OptionAttribute ??
+             throw new ArgumentException(Resources.PropertyDoesNotHaveAnOptionAttributeErrorMessage, nameof(prop));
+    }
+
+    /// <inheritdoc />
+    public ParameterAttribute GetParameter(PropertyInfo prop)
+    {
+      if (prop == null)
       {
-        throw new ArgumentException(Resources.PropertyDoesNotHaveAnOptionAttributeErrorMessage, nameof(property));
+        throw new ArgumentNullException(nameof(prop));
       }
+
+      return prop.GetCustomAttributes(typeof(ParameterAttribute), true).FirstOrDefault() as ParameterAttribute ??
+             throw new ArgumentException(Resources.PropertyDoesNotHaveAParameterAttributeErrorMessage, nameof(prop));
+    }
+
+    /// <inheritdoc />
+    public CommandAttribute GetCommand(PropertyInfo prop)
+    {
+      if (prop == null)
+      {
+        throw new ArgumentNullException(nameof(prop));
+      }
+
+      return prop.GetCustomAttributes(typeof(CommandAttribute), true).FirstOrDefault() as CommandAttribute ??
+             throw new ArgumentException(Resources.PropertyDoesNotHaveACommandAttributeErrorMessage, nameof(prop));
     }
 
     /// <inheritdoc />
     public IEnumerable<string> GetUnassignedRequiredOptionNames()
     {
       return GetProperties()
-             .Where(p => p.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option &&
-                         (option.Required &&
-                         !_AssignedOptions.Contains(option)))
-             .Select(p => (p.GetCustomAttributes(typeof(Option), true).FirstOrDefault() as Option)?.Name ?? Resources.NotApplicableValue);
+             .Where(p => p.GetCustomAttributes(typeof(OptionAttribute), true).FirstOrDefault() is OptionAttribute option &&
+                         option.Required &&
+                         !_AssignedOptions.Contains(option))
+             .Select(p => (p.GetCustomAttributes(typeof(OptionAttribute), true).FirstOrDefault() as OptionAttribute)?.Name ?? Resources.NotApplicableValue);
     }
 
     /// <inheritdoc />
-    public void SetPropertyValue(PropertyInfo property, string? value)
+    public object GetPropertyValue(PropertyInfo prop)
     {
-      if (property == null)
+      if (prop == null)
       {
-        throw new ArgumentNullException(nameof(property));
+        throw new ArgumentNullException(nameof(prop));
+      }
+
+      return prop.GetValue(GetCurrentConfiguration());
+    }
+
+    /// <inheritdoc />
+    public void SetCurrentCommand(object command)
+    {
+      _CurrentCommandConfiguration = command ?? throw new ArgumentNullException(nameof(command));
+    }
+
+    /// <inheritdoc />
+    public void ResetCurrentCommand()
+    {
+      _CurrentCommandConfiguration = null;
+    }
+
+    /// <inheritdoc />
+    public void SetPropertyValue(PropertyInfo prop, string? value)
+    {
+      if (prop == null)
+      {
+        throw new ArgumentNullException(nameof(prop));
       }
 
       // if argument has no value, property has to be of type "bool" - otherwise check type against given value
       if (string.IsNullOrWhiteSpace(value))
       {
-        if (property.PropertyType.FullName == PropertyTypeFullName.Boolean)
+        if (prop.PropertyType.FullName == PropertyTypeFullName.Boolean)
         {
-          property.SetValue(Configuration, true);
+          prop.SetValue(GetCurrentConfiguration(), true);
         }
         else
         {
-          throw new ArgumentException(Resources.PropertyWithoutValueRequiresTypeBooleanErrorMessage, property.Name);
+          throw new ArgumentException(Resources.PropertyWithoutValueRequiresTypeBooleanErrorMessage, prop.Name);
         }
       }
       else
       {
-        switch (property.PropertyType.FullName)
+        switch (prop.PropertyType.FullName)
         {
           case PropertyTypeFullName.String:
-            property.SetValue(Configuration, value);
+            prop.SetValue(GetCurrentConfiguration(), value);
             break;
 
           case PropertyTypeFullName.Boolean:
 
             if (IsBooleanTrueValue(value))
             {
-              property.SetValue(Configuration, true);
+              prop.SetValue(GetCurrentConfiguration(), true);
             }
             else if (IsBooleanFalseValue(value))
             {
-              property.SetValue(Configuration, false);
+              prop.SetValue(GetCurrentConfiguration(), false);
             }
             break;
 
           case PropertyTypeFullName.Char:
-            property.SetValue(Configuration, char.Parse(value));
+            prop.SetValue(GetCurrentConfiguration(), char.Parse(value));
             break;
 
           case PropertyTypeFullName.DateTime:
-            property.SetValue(Configuration, DateTime.Parse(value, Options.Culture));
+            prop.SetValue(GetCurrentConfiguration(), DateTime.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.Double:
-            property.SetValue(Configuration, double.Parse(value, Options.Culture));
+            prop.SetValue(GetCurrentConfiguration(), double.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.Int16:
-            property.SetValue(Configuration, short.Parse(value, Options.Culture));
+            prop.SetValue(GetCurrentConfiguration(), short.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.Int32:
-            property.SetValue(Configuration, int.Parse(value, Options.Culture));
+            prop.SetValue(GetCurrentConfiguration(), int.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.Int64:
-            property.SetValue(Configuration, long.Parse(value, Options.Culture));
+            prop.SetValue(GetCurrentConfiguration(), long.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.FileInfo:
-            property.SetValue(Configuration, new FileInfo(value));
+            prop.SetValue(GetCurrentConfiguration(), new FileInfo(value));
             break;
 
           case PropertyTypeFullName.DirectoryInfo:
-            property.SetValue(Configuration, new DirectoryInfo(value));
+            prop.SetValue(GetCurrentConfiguration(), new DirectoryInfo(value));
             break;
 
           case PropertyTypeFullName.Single:
-            property.SetValue(Configuration, float.Parse(value, Options.Culture));
+            prop.SetValue(GetCurrentConfiguration(), float.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.UInt16:
-            property.SetValue(Configuration, ushort.Parse(value, Options.Culture));
+            prop.SetValue(GetCurrentConfiguration(), ushort.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.UInt32:
-            property.SetValue(Configuration, uint.Parse(value, Options.Culture));
+            prop.SetValue(GetCurrentConfiguration(), uint.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.UInt64:
-            property.SetValue(Configuration, ulong.Parse(value, Options.Culture));
+            prop.SetValue(GetCurrentConfiguration(), ulong.Parse(value, Options.Culture));
             break;
 
           case PropertyTypeFullName.Uri:
-            property.SetValue(Configuration, new Uri(value));
+            prop.SetValue(GetCurrentConfiguration(), new Uri(value));
             break;
 
           default:
-            property.SetValue(Configuration, GetCustomDataTypeValue(property.PropertyType.GetType(), property.Name, value));
+            prop.SetValue(GetCurrentConfiguration(), GetCustomDataTypeValue(prop.PropertyType.GetType(), prop.Name, value));
             break;
         }
 
         // set "assigned" flag if property is an option
-        if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
+        if (prop.GetCustomAttributes(typeof(OptionAttribute), true).FirstOrDefault() is OptionAttribute option)
         {
           if (!_AssignedOptions.Contains(option))
           {
@@ -297,20 +397,20 @@ namespace NArgs.Services
     }
 
     /// <inheritdoc />
-    public bool IsValidValue(PropertyInfo property, string? value)
+    public bool IsValidValue(PropertyInfo prop, string? value)
     {
-      if (property == null)
+      if (prop == null)
       {
-        throw new ArgumentNullException(nameof(property));
+        throw new ArgumentNullException(nameof(prop));
       }
 
       bool result;
-      var isValueRequired = IsRequired(property);
+      var isValueRequired = IsRequired(prop);
 
       // if args has no value, property has to be of type "bool" - otherwise check type against given value
       if (value == null || string.IsNullOrWhiteSpace(value)) // just for the false positive CS8604
       {
-        if (property.PropertyType.FullName == PropertyTypeFullName.Boolean)
+        if (prop.PropertyType.FullName == PropertyTypeFullName.Boolean)
         {
           result = true;
         }
@@ -321,10 +421,10 @@ namespace NArgs.Services
       }
       else
       {
-        switch (property.PropertyType.FullName)
+        switch (prop.PropertyType.FullName)
         {
           case PropertyTypeFullName.Char:
-            result = char.TryParse(value, out char _);
+            result = char.TryParse(value, out var _);
             break;
 
           case PropertyTypeFullName.String:
@@ -344,7 +444,7 @@ namespace NArgs.Services
             break;
 
           case PropertyTypeFullName.DateTime:
-            result = DateTime.TryParse(value, out DateTime _);
+            result = DateTime.TryParse(value, out var _);
             break;
 
           case PropertyTypeFullName.DirectoryInfo:
@@ -357,19 +457,19 @@ namespace NArgs.Services
             break;
 
           case PropertyTypeFullName.Double:
-            result = double.TryParse(value, out double _);
+            result = double.TryParse(value, out var _);
             break;
 
           case PropertyTypeFullName.Int16:
-            result = short.TryParse(value, out short _);
+            result = short.TryParse(value, out var _);
             break;
 
           case PropertyTypeFullName.Int32:
-            result = int.TryParse(value, out int _);
+            result = int.TryParse(value, out var _);
             break;
 
           case PropertyTypeFullName.Int64:
-            result = long.TryParse(value, out long _);
+            result = long.TryParse(value, out var _);
             break;
 
           case PropertyTypeFullName.FileInfo:
@@ -382,19 +482,19 @@ namespace NArgs.Services
             break;
 
           case PropertyTypeFullName.Single:
-            result = float.TryParse(value, out float _);
+            result = float.TryParse(value, out var _);
             break;
 
           case PropertyTypeFullName.UInt16:
-            result = ushort.TryParse(value, out ushort _);
+            result = ushort.TryParse(value, out var _);
             break;
 
           case PropertyTypeFullName.UInt32:
-            result = uint.TryParse(value, out uint _);
+            result = uint.TryParse(value, out var _);
             break;
 
           case PropertyTypeFullName.UInt64:
-            result = ulong.TryParse(value, out ulong _);
+            result = ulong.TryParse(value, out var _);
             break;
 
           case PropertyTypeFullName.Uri:
@@ -402,7 +502,7 @@ namespace NArgs.Services
             break;
 
           default:
-            result = IsValidCustomDataTypeValue(property.PropertyType.GetType(), property.Name, value, IsRequired(property));
+            result = IsValidCustomDataTypeValue(prop.PropertyType.GetType(), prop.Name, value, IsRequired(prop));
             break;
         }
       }
@@ -421,7 +521,7 @@ namespace NArgs.Services
       }
       else
       {
-        if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option _)
+        if (property.GetCustomAttributes(typeof(OptionAttribute), true).FirstOrDefault() is OptionAttribute _)
         {
           return IsValidValue(property, value);
         }
@@ -430,6 +530,15 @@ namespace NArgs.Services
           return false;
         }
       }
+    }
+
+    /// <summary>
+    /// Gets the current configuration.
+    /// </summary>
+    /// <returns>Current configuration (e.g. current command or initial configuration.</returns>
+    private object GetCurrentConfiguration()
+    {
+      return _CurrentCommandConfiguration ?? Configuration;
     }
 
     /// <summary>
@@ -467,9 +576,9 @@ namespace NArgs.Services
 
       if (CustomDataTypeHandlers.ContainsKey(type))
       {
-        CustomDataTypeHandler oHandlerSet = CustomDataTypeHandlers[type];
+        var handlers = CustomDataTypeHandlers[type];
 
-        result = oHandlerSet.Validator(name, value, required);
+        result = handlers.Validator(name, value, required);
       }
 
       return result;
@@ -505,94 +614,197 @@ namespace NArgs.Services
       var parameterNames = new List<string>();
       var parameterOrdinals = new List<uint>();
 
-      foreach (PropertyInfo property in GetProperties())
+      foreach (var prop in GetProperties())
       {
-        if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option)
+        if (prop.GetOption() is OptionAttribute option)
         {
-          // check for required and duplicate option names
-          if (string.IsNullOrWhiteSpace(option.Name))
-          {
-            throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
-                                                                  Resources.OptionIsMissingRequiredNameFormatErrorMessage,
-                                                                  property.Name));
-          }
-
-          if (optionNames.Contains(option.Name.ToUpperInvariant()))
-          {
-            throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
-                                                                  Resources.OptionNameAlreadyUsedFormatErrorMessage,
-                                                                  option.Name));
-          }
-          else
-          {
-            optionNames.Add(option.Name.ToUpperInvariant());
-          }
-
-          if (!string.IsNullOrWhiteSpace(option.AlternativeName))
-          {
-            if (optionNames.Contains(option.AlternativeName.ToUpperInvariant()))
-            {
-              throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
-                                                                    Resources.OptionAlternativeNameAlreadyUsedFormatErrorMessage,
-                                                                    option.AlternativeName));
-            }
-            else
-            {
-              optionNames.Add(option.AlternativeName.ToUpperInvariant());
-            }
-          }
-
-          if (!string.IsNullOrWhiteSpace(option.LongName))
-          {
-            if (optionNames.Contains(option.LongName.ToUpperInvariant()))
-            {
-              throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
-                                                                    Resources.OptionLongNameAlreadyUsedFormatErrorMessage,
-                                                                    option.LongName));
-            }
-            else
-            {
-              optionNames.Add(option.LongName.ToUpperInvariant());
-            }
-          }
+          ValidateOptionName(prop, optionNames, option);
+          ValidateOptionAlternativeName(optionNames, option);
+          ValidateOptionLongName(optionNames, option);
         }
-        else if (property.GetCustomAttributes(typeof(Parameter), true).FirstOrDefault() is Parameter parameter)
+        else if (prop.GetParameter() is ParameterAttribute parameter)
         {
-          // check for duplicate parameter names
-          if (!string.IsNullOrWhiteSpace(parameter.Name))
+          ValidateParameter(parameter);
+          ValidateParameterName(parameterNames, parameterOrdinals, parameter);
+        }
+        else if (prop.GetCommand() is CommandAttribute command)
+        {
+          var commandParameterNames = new List<string>();
+          var commandParameterOrdinals = new List<uint>();
+
+          _CurrentCommandConfiguration = command;
+
+          try
           {
-            if (parameterNames.Contains(parameter.Name.ToUpperInvariant()))
+            // validate properties of current command
+            foreach (var cmdProp in prop.PropertyType.GetProperties())
             {
-              throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
-                                                                    Resources.ParameterNameAlreadyUsedFormatErrorMessage,
-                                                                    parameter.Name));
+              if (cmdProp.GetOption() is OptionAttribute cmdOption)
+              {
+                ValidateOptionName(cmdProp, optionNames, cmdOption);
+                ValidateOptionAlternativeName(optionNames, cmdOption);
+                ValidateOptionLongName(optionNames, cmdOption);
+              }
+              else if (cmdProp.GetParameter() is ParameterAttribute cmdParameter)
+              {
+                ValidateParameter(cmdParameter);
+                ValidateParameterName(commandParameterNames, commandParameterOrdinals, cmdParameter);
+              }
+              else if (cmdProp.GetCommand() is CommandAttribute cmdCommand)
+              {
+                throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                                      Resources.NestedCommandsAreNotAllowed,
+                                                                      cmdProp.Name));
+              }
             }
-            else
-            {
-              parameterNames.Add(parameter.Name.ToUpperInvariant());
-            }
+          }
+          finally
+          {
+            _CurrentCommandConfiguration = null;
           }
 
-          // check for duplicate parameter ordinals
-          if (parameterOrdinals.Contains(parameter.OrdinalNumber))
-          {
-            throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
-                                                                  Resources.ParameterOrdinalAlreadyUsedFormatErrorMessage,
-                                                                  parameter.OrdinalNumber));
-          }
-          else
-          {
-            parameterOrdinals.Add(parameter.OrdinalNumber);
-          }
+          ValidateParameterOrdinals(commandParameterOrdinals);
         }
       }
 
+      ValidateParameterOrdinals(parameterOrdinals);
+    }
+
+    /// <summary>
+    /// Validates a name of an option.
+    /// </summary>
+    /// <param name="prop">Property information.</param>
+    /// <param name="optionNames">Collection of used option names.</param>
+    /// <param name="option">Option to validate.</param>
+    private static void ValidateOptionName(PropertyInfo prop, IList<string> optionNames, OptionAttribute option)
+    {
+      // check for required and duplicate option names
+      if (string.IsNullOrWhiteSpace(option.Name))
+      {
+        throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                              Resources.OptionIsMissingRequiredNameFormatErrorMessage,
+                                                              prop.Name));
+      }
+
+      if (optionNames.Contains(option.Name.ToUpperInvariant()))
+      {
+        throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                              Resources.OptionNameAlreadyUsedFormatErrorMessage,
+                                                              option.Name));
+      }
+      else
+      {
+        optionNames.Add(option.Name.ToUpperInvariant());
+      }
+    }
+
+    /// <summary>
+    /// Validates a alternative name of an option.
+    /// </summary>
+    /// <param name="optionNames">Collection of used option names.</param>
+    /// <param name="option">Option to validate.</param>
+    private static void ValidateOptionAlternativeName(IList<string> optionNames, OptionAttribute option)
+    {
+      if (!string.IsNullOrWhiteSpace(option.AlternativeName))
+      {
+        if (optionNames.Contains(option.AlternativeName.ToUpperInvariant()))
+        {
+          throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                                Resources.OptionAlternativeNameAlreadyUsedFormatErrorMessage,
+                                                                option.AlternativeName));
+        }
+        else
+        {
+          optionNames.Add(option.AlternativeName.ToUpperInvariant());
+        }
+      }
+    }
+
+    /// <summary>
+    /// Validates a long name of an option.
+    /// </summary>
+    /// <param name="optionNames">Collection of used option names.</param>
+    /// <param name="option">Option to validate.</param>
+    private static void ValidateOptionLongName(IList<string> optionNames, OptionAttribute option)
+    {
+      if (!string.IsNullOrWhiteSpace(option.LongName))
+      {
+        if (optionNames.Contains(option.LongName.ToUpperInvariant()))
+        {
+          throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                                Resources.OptionLongNameAlreadyUsedFormatErrorMessage,
+                                                                option.LongName));
+        }
+        else
+        {
+          optionNames.Add(option.LongName.ToUpperInvariant());
+        }
+      }
+    }
+
+    /// <summary>
+    /// Validates a parameter.
+    /// </summary>
+    /// <param name="parameter">Parameter to validate.</param>
+    private void ValidateParameter(ParameterAttribute parameter)
+    {
+      if (HasCommands())
+      {
+        throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                              Resources.ParametersNotAllowedToCombineWithCommands,
+                                                              parameter.Name));
+      }
+    }
+
+    /// <summary>
+    /// Validates a name of a parameter.
+    /// </summary>
+    /// <param name="parameterNames">Collection of used parameter names.</param>
+    /// <param name="parameterOrdinals">Collection of used parameter ordinals.</param>
+    /// <param name="parameter">Parameter to validate.</param>
+    private static void ValidateParameterName(IList<string> parameterNames, IList<uint> parameterOrdinals, ParameterAttribute parameter)
+    {
+      // check for duplicate parameter names
+      if (!string.IsNullOrWhiteSpace(parameter.Name))
+      {
+        if (parameterNames.Contains(parameter.Name.ToUpperInvariant()))
+        {
+          throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                                Resources.ParameterNameAlreadyUsedFormatErrorMessage,
+                                                                parameter.Name));
+        }
+        else
+        {
+          parameterNames.Add(parameter.Name.ToUpperInvariant());
+        }
+      }
+
+      // check for duplicate parameter ordinals
+      if (parameterOrdinals.Contains(parameter.OrdinalNumber))
+      {
+        throw new InvalidConfigurationException(string.Format(CultureInfo.InvariantCulture,
+                                                              Resources.ParameterOrdinalAlreadyUsedFormatErrorMessage,
+                                                              parameter.OrdinalNumber));
+      }
+      else
+      {
+        parameterOrdinals.Add(parameter.OrdinalNumber);
+      }
+    }
+
+    /// <summary>
+    /// Validates the parameter ordinals.
+    /// </summary>
+    /// <param name="parameterOrdinals">Collection of used parameter ordinals.</param>
+    private static void ValidateParameterOrdinals(List<uint> parameterOrdinals)
+    {
       if (parameterOrdinals.Any())
       {
         // check for correct ordinal sequence (starting at #1)
         parameterOrdinals.Sort();
 
-        if (parameterOrdinals.First() != 1 || parameterOrdinals.Last() != parameterOrdinals.Count)
+        if (parameterOrdinals.First() != 1 ||
+            parameterOrdinals.Last() != parameterOrdinals.Count)
         {
           throw new InvalidConfigurationException(Resources.ParameterOrdinalNotUsedInSequenceErrorMessage);
         }
@@ -633,7 +845,5 @@ namespace NArgs.Services
         Validator = validator ?? throw new ArgumentNullException(nameof(validator));
       }
     }
-
-    private List<Option> _AssignedOptions;
   }
 }

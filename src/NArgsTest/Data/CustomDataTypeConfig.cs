@@ -6,7 +6,7 @@ namespace NArgsTest.Data
 {
   public class CustomDataTypeConfig
   {
-    [Option(LongName = "color-name", Name = "color")]
+    [OptionAttribute(LongName = "color-name", Name = "color")]
     public Color Color
     {
       get;

@@ -1,11 +1,9 @@
 using System;
-using System.Globalization;
 using System.Linq;
-using System.Threading;
+
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using NArgs;
-using NArgs.Models;
 
 using NArgsTest.Data;
 
@@ -14,6 +12,44 @@ namespace NArgsTest
   [TestClass]
   public class SimpleValidConfigTests
   {
+    [TestMethod]
+    public void GetUsageText_Should_Be_As_Expected()
+    {
+      var target = new ConsoleCommandLineParser(new SimpleValidConfig());
+      var expected = @"SYNTAX:
+  UnitTest <parameterA> <parameterB> [/h] [/v] [/s] [/c]
+           [/dbl] [/i16] [/i32] [/i64]
+           [/dt] [/file] [/dir] [/fl]
+           [/ui16] [/ui32] [/ui64] [/uri] 
+
+  PARAMETERS:
+    parameterA     Example Parameter #1
+    parameterB     Example Parameter #2
+
+  OPTIONS:
+    /h | -? | --help           
+    /v | --verbose             
+    /s | --string              
+    /c | --char                
+    /dbl | --double            
+    /i16 | --int16             
+    /i32 | -i | --int32        
+    /i64 | -l | --int64        
+    /dt | --date               
+    /file | --file-info        
+    /dir | --directory-info    
+    /fl | --single             
+    /ui16 | --uint16           
+    /ui32 | --uint32           
+    /ui64 | --uint64           
+    /uri                       
+";
+
+      var actual = target.GetUsageText("UnitTest");
+
+      Assert.AreEqual(expected, actual);
+    }
+
     [TestMethod]
     public void Valid_Bool_Options_Should_Be_Parsed()
     {

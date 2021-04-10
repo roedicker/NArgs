@@ -3,12 +3,12 @@ using System;
 namespace NArgs.Models
 {
   /// <summary>
-  /// Defines a command argument item
+  /// Defines a command argument item.
   /// </summary>
   public class CommandArgsItem
   {
     /// <summary>
-    /// Gets or sets the command argument item type
+    /// Gets or sets the command argument item type.
     /// </summary>
     public CommandArgsItemType ItemType
     {
@@ -17,7 +17,7 @@ namespace NArgs.Models
     }
 
     /// <summary>
-    /// Gets or sets the name of the command argument
+    /// Gets or sets the name of the command argument.
     /// </summary>
     public string Name
     {
@@ -26,7 +26,7 @@ namespace NArgs.Models
     }
 
     /// <summary>
-    /// Gets the value of the command argument
+    /// Gets the value of the command argument.
     /// </summary>
     public string Value
     {
@@ -35,7 +35,7 @@ namespace NArgs.Models
     }
 
     /// <summary>
-    /// Creates a new command argument
+    /// Initializes a new instance of the <see cref="CommandArgsItem" /> class.
     /// </summary>
     public CommandArgsItem()
     {
@@ -45,11 +45,11 @@ namespace NArgs.Models
     }
 
     /// <summary>
-    /// Creates a new instance of the command argument with given type, name and value
+    /// Initializes a new instance of the <see cref="CommandArgsItem" /> class with given type, name and value.
     /// </summary>
-    /// <param name="itemType">Item type of the command argument</param>
-    /// <param name="name">Name of the command argument</param>
-    /// <param name="value">Value of the command argument</param>
+    /// <param name="itemType">Item type of the command argument.</param>
+    /// <param name="name">Name of the command argument.</param>
+    /// <param name="value">Value of the command argument.</param>
     public CommandArgsItem(CommandArgsItemType itemType, string name, string value)
     {
       ItemType = itemType;

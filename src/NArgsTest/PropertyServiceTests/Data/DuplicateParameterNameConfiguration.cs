@@ -10,21 +10,21 @@ namespace NArgsTest.PropertyServiceTests.Data
 {
   public class DuplicateParameterNameConfiguration
   {
-    [Parameter(OrdinalNumber = 1)]
+    [ParameterAttribute(OrdinalNumber = 1)]
     public string Parameter1
     {
       get;
       set;
     }
 
-    [Parameter(Name = "p2", OrdinalNumber = 2)]
+    [ParameterAttribute(Name = "p2", OrdinalNumber = 2)]
     public string Parameter2
     {
       get;
       set;
     }
 
-    [Parameter(Name = "p2", OrdinalNumber = 3)]
+    [ParameterAttribute(Name = "p2", OrdinalNumber = 3)]
     public string Parameter3
     {
       get;

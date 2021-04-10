@@ -9,7 +9,7 @@ namespace NArgs.Models
   public class TokenizeOptions
   {
     /// <summary>
-    /// Gets or sets the quotation character
+    /// Gets or sets the quotation character.
     /// </summary>
     public char QuotationCharacter
     {
@@ -20,7 +20,7 @@ namespace NArgs.Models
     /// <summary>
     /// Gets a list of all tokenize separator characters.
     /// </summary>
-    /// <returns>List of all tokenize separator characters</returns>
+    /// <returns>List of all tokenize separator characters.</returns>
     public IEnumerable<char> Seperators
     {
       get;
@@ -28,9 +28,9 @@ namespace NArgs.Models
     }
 
     /// <summary>
-    /// Gets or sets a list of all argument option name indicators
+    /// Gets or sets a list of all argument option name indicators.
     /// </summary>
-    /// <returns>List of all argument option name indicators</returns>
+    /// <returns>List of all argument option name indicators.</returns>
     public IEnumerable<string> ArgumentOptionNameIndicators
     {
       get;
@@ -40,7 +40,7 @@ namespace NArgs.Models
     /// <summary>
     /// Gets a list of all argument option value separator.
     /// </summary>
-    /// <returns>List of all argument option value separators</returns>
+    /// <returns>List of all argument option value separators.</returns>
     public IEnumerable<char> ArgumentOptionValueSeparators
     {
       get;
@@ -48,7 +48,7 @@ namespace NArgs.Models
     }
 
     /// <summary>
-    /// Initializes a new instance of a <see cref="TokenizeOptions" /> class.
+    /// Initializes a new instance of the <see cref="TokenizeOptions" /> class.
     /// </summary>
     public TokenizeOptions()
     {

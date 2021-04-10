@@ -54,6 +54,8 @@
     <Compile Include="PropertyServiceTests\Data\InvalidParameterOrdinalNumberSequenceConfiguration.cs" />
     <Compile Include="PropertyServiceTests\Data\InvalidParameterOrdinalNumberConfiguration.cs" />
     <Compile Include="PropertyServiceTests\Data\MissingOptionNameConfiguration.cs" />
+    <Compile Include="CommandLineParserTests\Data\ValidCommandConfiguration.cs" />
+    <Compile Include="CommandLineParserTests\ConsoleCommandLineParserTests\CommandTests.cs" />
     <Compile Include="PropertyServiceTests\DefaultPropertyServiceTests\OptionTests.cs" />
     <Compile Include="PropertyServiceTests\DefaultPropertyServiceTests\ParameterTests.cs" />
     <Compile Include="SimpleValidConfigTests.cs" />

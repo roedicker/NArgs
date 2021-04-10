@@ -1,14 +1,8 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using NArgs;
-using NArgs.Attributes;
 using NArgs.Services;
 using NArgsTest.PropertyServiceTests.Data;
 
@@ -52,7 +46,7 @@ namespace NArgsTest.PropertyServiceTests.DefaultPropertyServiceTests
       }
       catch (Exception ex)
       {
-        ArgumentOutOfRangeException baseException = ex.GetBaseException() as ArgumentOutOfRangeException;
+        var baseException = ex.GetBaseException() as ArgumentOutOfRangeException;
 
         Assert.IsNotNull(baseException);
         Assert.AreEqual(baseException.ParamName, "OrdinalNumber");

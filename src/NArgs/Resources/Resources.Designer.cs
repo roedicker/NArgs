@@ -70,11 +70,38 @@ namespace NArgs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Command with given name does not exist.
+        /// </summary>
+        internal static string CommandDoesNotExistErrorMessage {
+            get {
+                return ResourceManager.GetString("CommandDoesNotExistErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to COMMANDS.
+        /// </summary>
+        internal static string CommandsCapitalizedName {
+            get {
+                return ResourceManager.GetString("CommandsCapitalizedName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Missing required parameter value.
         /// </summary>
         internal static string MissingRequiredParameterValueErrorMessage {
             get {
                 return ResourceManager.GetString("MissingRequiredParameterValueErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Nested commands are not allowed.
+        /// </summary>
+        internal static string NestedCommandsAreNotAllowed {
+            get {
+                return ResourceManager.GetString("NestedCommandsAreNotAllowed", resourceCulture);
             }
         }
         
@@ -106,7 +133,7 @@ namespace NArgs {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Option with that given name does not exist.
+        ///   Looks up a localized string similar to Option with given name does not exist.
         /// </summary>
         internal static string OptionDoesNotExistErrorMessage {
             get {
@@ -205,11 +232,38 @@ namespace NArgs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Parameters not allowed to combine with commands.
+        /// </summary>
+        internal static string ParametersNotAllowedToCombineWithCommands {
+            get {
+                return ResourceManager.GetString("ParametersNotAllowedToCombineWithCommands", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Property does not have a command attribute.
+        /// </summary>
+        internal static string PropertyDoesNotHaveACommandAttributeErrorMessage {
+            get {
+                return ResourceManager.GetString("PropertyDoesNotHaveACommandAttributeErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Property does not have an option attribute.
         /// </summary>
         internal static string PropertyDoesNotHaveAnOptionAttributeErrorMessage {
             get {
                 return ResourceManager.GetString("PropertyDoesNotHaveAnOptionAttributeErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Property does not have a parameter attribute.
+        /// </summary>
+        internal static string PropertyDoesNotHaveAParameterAttributeErrorMessage {
+            get {
+                return ResourceManager.GetString("PropertyDoesNotHaveAParameterAttributeErrorMessage", resourceCulture);
             }
         }
         

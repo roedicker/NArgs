@@ -20,8 +20,11 @@ namespace NArgs
   /// </summary>
   public abstract class CommandLineParser : IArgumentParser
   {
+    /// <inheritdoc />
+    public event ExecuteCommandHandler? ExecuteCommand;
+
     /// <summary>
-    /// Gets or sets the property service.
+    /// Gets the property service.
     /// </summary>
     protected IPropertyService PropertyService
     {
@@ -29,7 +32,16 @@ namespace NArgs
     }
 
     /// <summary>
-    /// Gets or sets the tokenizer.
+    /// Gets or sets the command property service.
+    /// </summary>
+    protected IPropertyService? CommandPropertyService
+    {
+      get;
+      private set;
+    }
+
+    /// <summary>
+    /// Gets the tokenizer.
     /// </summary>
     protected ICommandTokenizer Tokenizer
     {
@@ -45,7 +57,7 @@ namespace NArgs
     }
 
     /// <summary>
-    /// Initializes a new instance of a <see cref="CommandLineParser" /> class.
+    /// Initializes a new instance of the <see cref="CommandLineParser" /> class.
     /// </summary>
     /// <param name="tokenizer">Command argument tokenizer.</param>
     /// <param name="propertyService">Property service.</param>
@@ -53,11 +65,12 @@ namespace NArgs
     {
       Tokenizer = tokenizer ?? throw new ArgumentNullException(nameof(tokenizer));
       PropertyService = propertyService ?? throw new ArgumentNullException(nameof(propertyService));
+      CommandPropertyService = null;
       Options = new ParseOptions();
     }
 
     /// <summary>
-    /// Initializes a new instance of a <see cref="CommandLineParser" /> class with custom options.
+    /// Initializes a new instance of the <see cref="CommandLineParser" /> class with custom options.
     /// </summary>
     /// <param name="tokenizer">Command argument tokenizer.</param>
     /// <param name="propertyService">Property service.</param>
@@ -82,131 +95,93 @@ namespace NArgs
       return ParseItems(Tokenizer.Tokenize(args));
     }
 
-    /// <summary>
-    /// Gets the usage for the current configuration
-    /// </summary>
-    /// <param name="executable">Current executable name</param>
-    /// <returns>Usage output for the current configuration</returns>
-    public virtual string GetUsage(string executable)
+    /// <inheritdoc />
+    public virtual string GetUsageText(string executableName)
     {
-      executable ??= string.Empty;
+      executableName ??= string.Empty;
 
       var result = new StringBuilder();
-      var parameters = new List<Parameter>();
-      using var usageSyntaxText = new StringCollection();
-      using var optionsSyntaxText = new StringCollection();
-      var options = new StringDictionary();
-      var maxParameterNameLength = 0;
-      var maxOptionCompleteNameLength = 0;
 
-      foreach (var property in PropertyService.GetProperties())
-      {
-        if (property.GetCustomAttributes(typeof(Parameter), true).FirstOrDefault() is Parameter parameter)
-        {
-          parameters.Add(parameter);
+      var parameterInfo = GetParameterUsageInfo();
+      var optionInfo = GetOptionUsageInfo();
+      var commandInfo = GetCommandUsageInfo();
+      var indention = executableName.Length + 3;
 
-          if (parameter.Name?.Length > maxParameterNameLength)
-          {
-            maxParameterNameLength = (int)parameter.Name.Length;
-          }
-        }
-        else
-        {
-          if (property.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option oOption)
-          {
-            using var optionNames = new StringCollection();
-
-            if (!string.IsNullOrWhiteSpace(oOption.Name))
-            {
-              optionNames.AddDistinct($"{TokenizeOptions.ArgumentOptionDefaultNameIndicator}{oOption.Name}");
-            }
-
-            if (!string.IsNullOrWhiteSpace(oOption.AlternativeName))
-            {
-              optionNames.AddDistinct($"{TokenizeOptions.ArgumentOptionDefaultNameIndicator}{oOption.AlternativeName}");
-            }
-
-            if (!string.IsNullOrWhiteSpace(oOption.LongName))
-            {
-              optionNames.AddDistinct($"{TokenizeOptions.ArgumentOptionLongNameIndicator}{oOption.LongName}");
-            }
-
-            var optionCompleteName = optionNames.ToString(" | ");
-
-            if (oOption.Required)
-            {
-              if (property.PropertyType.FullName == PropertyTypeFullName.Boolean)
-              {
-                optionsSyntaxText.Add($"{optionCompleteName}");
-              }
-              else
-              {
-                optionsSyntaxText.Add($"{optionCompleteName} <{oOption.UsageTypeDisplayName}>");
-              }
-            }
-            else
-            {
-              if (property.PropertyType.FullName == PropertyTypeFullName.Boolean)
-              {
-                optionsSyntaxText.Add($"[{optionCompleteName}]");
-              }
-              else
-              {
-                optionsSyntaxText.Add($"[{optionCompleteName} <{oOption.UsageTypeDisplayName}>]");
-              }
-            }
-
-            options.Add(optionCompleteName, string.IsNullOrWhiteSpace(oOption.Description) ? Resources.NotApplicableValue : oOption.Description);
-
-            if (optionCompleteName.Length > maxOptionCompleteNameLength)
-            {
-              maxOptionCompleteNameLength = optionCompleteName.Length;
-            }
-          }
-        }
-      }
-
-      // sort parameters by their ordinal numbers
-      parameters.Sort((l, r) => l.OrdinalNumber.CompareTo(r.OrdinalNumber));
-
+      // build syntax text
       result.AppendLine($"{Resources.SyntaxCapitalizedName}:");
-      result.Append($"  {executable} ");
+      result.Append($"  {executableName} ");
 
-      if (parameters.Count > 0)
+      result.Append(commandInfo.GetUsageSyntaxText(indention));
+      result.Append(parameterInfo.GetUsageSyntaxText(indention));
+      result.Append(optionInfo.GetUsageSyntaxText(indention));
+
+      var indentionBuilder = new StringBuilder();
+
+      for (var i = 0; i < executableName.Length + 3; i++)
       {
-        foreach (var parameter in parameters)
-        {
-          result.AppendFormat(CultureInfo.InvariantCulture, "<{0}> ", string.IsNullOrWhiteSpace(parameter.Name) ? Resources.NotApplicableValue : parameter.Name);
-        }
+        indentionBuilder.Append(' ');
       }
 
-      StringBuilder sbIndention = new StringBuilder();
+      // build detail text
+      result.Append($"{Environment.NewLine}");
 
-      for (var i = 0; i < executable.Length + 3; i++)
+      result.Append(commandInfo.GetUsageDetailText());
+      result.Append(parameterInfo.GetUsageDetailText());
+      result.Append(optionInfo.GetUsageDetailText());
+
+      return result.ToString();
+    }
+
+    /// <inheritdoc />
+    public string GetCommandUsageText(string executableName, string commandName)
+    {
+      if (string.IsNullOrWhiteSpace(commandName))
       {
-        sbIndention.Append(' ');
+        throw new ArgumentNullException(Resources.MissingRequiredParameterValueErrorMessage, nameof(commandName));
       }
 
-      result.Append($"{optionsSyntaxText.ToString($"{Environment.NewLine}{sbIndention}")}{Environment.NewLine}");
+      executableName ??= string.Empty;
 
-      if (parameters.Count > 0)
+      var prop = PropertyService.GetPropertyByCommandName(commandName);
+      var command = PropertyService.GetCommand(prop);
+      var commandObject = PropertyService.GetPropertyValue(prop);
+      var result = new StringBuilder();
+
+      PropertyService.SetCurrentCommand(commandObject);
+
+      try
       {
-        result.AppendLine($"{Environment.NewLine}{Resources.ParametersCapitalizedName}:");
+        var parameterInfo = GetParameterUsageInfo();
+        var optionInfo = GetOptionUsageInfo();
+        var commandInfo = GetCommandUsageInfo();
+        var indention = executableName.Length + 3;
 
-        foreach (var parameter in parameters)
+        // build description text
+        result.AppendLine($"{command.Name}: {command.Description}{Environment.NewLine}");
+
+        // build syntax text
+        result.AppendLine($"{Resources.SyntaxCapitalizedName}:");
+        result.Append($"  {executableName} {commandName} ");
+
+        result.Append(parameterInfo.GetUsageSyntaxText(indention));
+        result.Append(optionInfo.GetUsageSyntaxText(indention));
+
+        var indentionBuilder = new StringBuilder();
+
+        for (var i = 0; i < executableName.Length + 3; i++)
         {
-          result.AppendFormat(CultureInfo.InvariantCulture, "  {0, " + Convert.ToString(-maxParameterNameLength, CultureInfo.InvariantCulture) + "}     {1}{2}", string.IsNullOrWhiteSpace(parameter.Name) ? "n/a" : parameter.Name, string.IsNullOrWhiteSpace(parameter.Description) ? "n/a" : parameter.Description, Environment.NewLine);
+          indentionBuilder.Append(' ');
         }
+
+        // build detail text
+        result.Append($"{Environment.NewLine}");
+
+        result.Append(parameterInfo.GetUsageDetailText());
+        result.Append(optionInfo.GetUsageDetailText());
       }
-
-      if (options.Count > 0)
+      finally
       {
-        result.AppendLine($"{Environment.NewLine}{Resources.OptionsCapitalizedName}:");
-
-        foreach (string key in options.Keys)
-        {
-          result.AppendFormat(CultureInfo.InvariantCulture, "  {0, " + Convert.ToString(-maxOptionCompleteNameLength, CultureInfo.InvariantCulture) + "}     {1}{2}", key, options[key], Environment.NewLine);
-        }
+        PropertyService.ResetCurrentCommand();
       }
 
       return result.ToString();
@@ -218,6 +193,11 @@ namespace NArgs
       AddCustomDataTypeHandler(type, setter, validator);
     }
 
+    /// <summary>
+    /// Parses tokenize items.
+    /// </summary>
+    /// <param name="items">Tokenize items to parse.</param>
+    /// <returns>Parse result.</returns>
     private ParseResult ParseItems(IList<TokenizeItem> items)
     {
       if (items == null)
@@ -226,64 +206,54 @@ namespace NArgs
       }
 
       var result = new ParseResult();
+      object? command = null;
+      var commandName = string.Empty;
 
       try
       {
-        // check if tokenizing failed
-        if (items.Any(item => item.Failed))
-        {
-          result.AddErrors(items.Where(item => item.Failed)
-                                .Select(item => new ParseError(ParseErrorType.InvalidCommandArgsFormat,
-                                                               item.Name,
-                                                               item.Value,
-                                                               item.ErrorMessage)));
+        var analysisResult = AnalyzeItems(items);
 
+        if (analysisResult.Failure)
+        {
+          result.AddErrors(analysisResult.Errors);
           return result;
         }
 
-        // TODO: Perform plausibility checks regarding identical option names and/or parameter ordinals
-
         uint ordinalNumber = 1;
 
-        for (int i = 0; i < items.Count; i++)
+        for (var i = 0; i < items.Count; i++)
         {
           var item = items[i];
-          TokenizeItem? nextItem = (i + 1) < items.Count ? items[i + 1] : null;
-
-          // perform plausibility checks
-          if (string.IsNullOrWhiteSpace(item.Name))
-          {
-            result.AddError(new ParseError(ParseErrorType.InvalidCommandArgsFormat, item.Name, item.Value, "Required name is missing"));
-          }
+          var nextItem = (i + 1) < items.Count ? items[i + 1] : null;
 
           // check if item refers to an option
-          var property = DetermineOptionProperty(item);
+          var prop = DetermineOptionProperty(item);
 
-          if (property != null)
+          if (prop != null)
           {
             // check if item contains directly a value or not
             if (string.IsNullOrEmpty(item.Value))
             {
               // special handling of boolean options: Either no value (treat as true) or optional following value
-              if (property.PropertyType == typeof(bool))
+              if (prop.PropertyType == typeof(bool))
               {
                 // check if next item (if available) is a boolean value (use it) or not (ignore it)
-                if (PropertyService.IsValidValue(property, nextItem?.Name))
+                if (PropertyService.IsValidValue(prop, nextItem?.Name))
                 {
-                  PropertyService.SetPropertyValue(property, nextItem?.Name);
+                  PropertyService.SetPropertyValue(prop, nextItem?.Name);
                   i++;
                 }
                 else
                 {
-                  PropertyService.SetPropertyValue(property, true.ToLowerString());
+                  PropertyService.SetPropertyValue(prop, true.ToLowerString());
                 }
               }
               else
               {
                 // option refers not to a boolean - validate value (next item)
-                if (PropertyService.IsValidValue(property, nextItem?.Name))
+                if (PropertyService.IsValidValue(prop, nextItem?.Name))
                 {
-                  PropertyService.SetPropertyValue(property, nextItem?.Name);
+                  PropertyService.SetPropertyValue(prop, nextItem?.Name);
                 }
                 else
                 {
@@ -301,9 +271,9 @@ namespace NArgs
             }
             else
             {
-              if (PropertyService.IsValidValue(property, item.Value))
+              if (PropertyService.IsValidValue(prop, item.Value))
               {
-                PropertyService.SetPropertyValue(property, item.Value);
+                PropertyService.SetPropertyValue(prop, item.Value);
               }
               else
               {
@@ -319,28 +289,44 @@ namespace NArgs
           }
           else
           {
-            // check if item refers to a parameter
-            property = DetermineParameterProperty(ordinalNumber);
+            // check if item refers to a command
+            prop = DetermineCommandProperty(item);
 
-            if (property == null)
+            if (prop != null)
             {
-              // item neither refers to an option nor a parameter
-              result.AddError(new ParseError(ParseErrorType.InvalidCommandArgsFormat, item.Name, item.Value, "Argument does not match any option or parameter"));
+              command = PropertyService.GetPropertyValue(prop);
+              commandName = item.Name;
+
+              // indicate the current used command
+              PropertyService.SetCurrentCommand(command);
               continue;
             }
-            else
+
+            if (prop == null)
             {
-              if (PropertyService.IsValidValue(property, item.Name))
+              // check if item refers to a parameter
+              prop = DetermineParameterProperty(ordinalNumber);
+
+              if (prop == null)
               {
-                PropertyService.SetPropertyValue(property, item.Name);
+                // item neither refers to an option nor a parameter
+                result.AddError(new ParseError(ParseErrorType.InvalidCommandArgsFormat, item.Name, item.Value, "Argument does not match any option or parameter"));
+                continue;
               }
               else
               {
-                result.AddError(new ParseError(ParseErrorType.InvalidParameterValue, property.Name, item.Name));
-                continue;
-              }
+                if (PropertyService.IsValidValue(prop, item.Name))
+                {
+                  PropertyService.SetPropertyValue(prop, item.Name);
+                }
+                else
+                {
+                  result.AddError(new ParseError(ParseErrorType.InvalidParameterValue, prop.Name, item.Name));
+                  continue;
+                }
 
-              ordinalNumber++;
+                ordinalNumber++;
+              }
             }
           }
         }
@@ -357,16 +343,74 @@ namespace NArgs
       {
         result.AddError(new ParseError(ParseErrorType.InvalidCommandArgsFormat, ex.ItemName, null, ex.Message));
       }
-#pragma warning disable CA1031 // Do not catch general exception types
       catch (Exception ex)
-#pragma warning restore CA1031 // Do not catch general exception types
       {
         result.AddError(new ParseError(ParseErrorType.UnknownError, Resources.NotAvailableShortName, null, ex.Message));
+      }
+
+      if (result.Success && command != null)
+      {
+        ExecuteCommand?.Invoke(new CommandEventArgs(commandName, command));
+
+        if (command is ICommand cmd)
+        {
+          cmd.ExecuteCommand();
+        }
       }
 
       return result;
     }
 
+    /// <summary>
+    /// Validates the tokenized items and related rules for given configuration
+    /// </summary>
+    /// <param name="items">Tokenite items.</param>
+    /// <returns>Validation result.</returns>
+    private AnalysisResult AnalyzeItems(IEnumerable<TokenizeItem> items)
+    {
+      if (items == null)
+      {
+        throw new ArgumentNullException(nameof(items));
+      }
+
+      var result = new AnalysisResult();
+
+      // check if tokenizing failed
+      if (items.Any(item => item.Failed))
+      {
+        result.AddErrors(items.Where(item => item.Failed)
+                              .Select(item => new ParseError(ParseErrorType.InvalidCommandArgsFormat,
+                                                             item.Name,
+                                                             item.Value,
+                                                             item.ErrorMessage)));
+
+        return result;
+      }
+
+      // check if help option is available
+      // TODO: Add HelpOption attribute
+
+      // check if command is configured and used
+      result.HasCommandsDefined = PropertyService.HasCommands();
+
+      // if comman
+
+
+      //// check if parameter is defined if commands are
+      //if (result.CommandsDefined && PropertyService.HasParameters())
+      //{
+      //  result.AddError(new ParseError(ParseErrorType.))
+      //}
+
+
+      return result;
+    }
+
+    /// <summary>
+    /// Gets an option property for given tokenize item.
+    /// </summary>
+    /// <param name="item">Tokenize item.</param>
+    /// <returns>Option property for given tokenize item or <see langword="null" /> if not found.</returns>
     private PropertyInfo? DetermineOptionProperty(TokenizeItem item)
     {
       // check if current token is an option
@@ -376,32 +420,57 @@ namespace NArgs
                                                });
 
       return PropertyService.GetProperties()
-                            .FirstOrDefault(p => p.GetCustomAttributes(typeof(Option), true).FirstOrDefault() is Option option &&
-                                                 (option.Name == itemName ||
-                                                  option.AlternativeName == itemName ||
-                                                  option.LongName == itemName
-                                                 ));
+                                 .FirstOrDefault(p => p.GetCustomAttributes(typeof(OptionAttribute), true).FirstOrDefault() is OptionAttribute option &&
+                                                      (option.Name == itemName ||
+                                                       option.AlternativeName == itemName ||
+                                                       option.LongName == itemName
+                                                      ));
     }
 
+    /// <summary>
+    /// Checks for required properties.
+    /// </summary>
+    /// <returns>Parse result.</returns>
     private ParseResult CheckRequiredProperties()
     {
       var result = new ParseResult();
 
-      result.AddErrors(PropertyService.GetUnassignedRequiredOptionNames()
-                                      .Select(name => new ParseError(ParseErrorType.RequiredOptionValue,
-                                                                  name,
-                                                                  Resources.NotApplicableValue,
-                                                                  string.Format(CultureInfo.InvariantCulture,
-                                                                                Resources.OptionIsMissingRequiredValueFormatErrorMessage,
-                                                                                name))));
+      result.AddErrors(PropertyService
+                       .GetUnassignedRequiredOptionNames()
+                       .Select(name => new ParseError(ParseErrorType.RequiredOptionValue,
+                                                      name,
+                                                      Resources.NotApplicableValue,
+                                                      string.Format(CultureInfo.InvariantCulture,
+                                                                    Resources.OptionIsMissingRequiredValueFormatErrorMessage,
+                                                                    name))));
 
       return result;
     }
 
-    private PropertyInfo? DetermineParameterProperty(uint ordinalNumber)
+    /// <summary>
+    /// Gets a command decorated property for given tokenize item.
+    /// </summary>
+    /// <param name="item">Tokenize item.</param>
+    /// <returns>Command property for given tokenize item or <see langword="null" /> if not found.</returns>
+    private PropertyInfo DetermineCommandProperty(TokenizeItem item)
     {
-      return PropertyService.GetProperties()
-                                 .FirstOrDefault(p => p.GetCustomAttributes(typeof(Parameter), true).FirstOrDefault() is Parameter parameter && parameter.OrdinalNumber == ordinalNumber);
+      return PropertyService
+             .GetProperties()
+             .FirstOrDefault(p => p.GetCustomAttributes(typeof(CommandAttribute), true)
+                                   .FirstOrDefault() is CommandAttribute command && command.Name == item.Name);
+    }
+
+    /// <summary>
+    /// Gets a parameter decorated property for given ordinal number.
+    /// </summary>
+    /// <param name="ordinalNumber">Current ordinal number.</param>
+    /// <returns>Option property for given ordinal number or <see langword="null" /> if not found.</returns>
+    private PropertyInfo DetermineParameterProperty(uint ordinalNumber)
+    {
+      return PropertyService
+             .GetProperties()
+             .FirstOrDefault(p => p.GetCustomAttributes(typeof(ParameterAttribute), true)
+                                   .FirstOrDefault() is ParameterAttribute parameter && parameter.OrdinalNumber == ordinalNumber);
     }
 
     /// <summary>
@@ -423,6 +492,51 @@ namespace NArgs
     private string GetOptionName(string itemName)
     {
       return itemName?.Trim(Tokenizer.Options.ArgumentOptionNameIndicators) ?? string.Empty;
+    }
+
+    private ParameterUsageInfo GetParameterUsageInfo()
+    {
+      var result = new ParameterUsageInfo();
+
+      foreach (var property in PropertyService.GetProperties())
+      {
+        if (property.GetCustomAttributes(typeof(ParameterAttribute), true).FirstOrDefault() is ParameterAttribute parameter)
+        {
+          result.AddItem(parameter);
+        }
+      }
+
+      result.Items.ToList().Sort((l, r) => l.OrdinalNumber.CompareTo(r.OrdinalNumber));
+
+      return result;
+    }
+
+    private OptionUsageInfo GetOptionUsageInfo()
+    {
+      var result = new OptionUsageInfo();
+
+      foreach (var property in PropertyService.GetProperties())
+      {
+        if (property.GetCustomAttributes(typeof(OptionAttribute), true).FirstOrDefault() is OptionAttribute option)
+        {
+          result.AddItem(option);
+        }
+      }
+      return result;
+    }
+
+    private CommandUsageInfo GetCommandUsageInfo()
+    {
+      var result = new CommandUsageInfo();
+
+      foreach (var property in PropertyService.GetProperties())
+      {
+        if (property.GetCustomAttributes(typeof(CommandAttribute), true).FirstOrDefault() is CommandAttribute command)
+        {
+          result.AddItem(command);
+        }
+      }
+      return result;
     }
   }
 }

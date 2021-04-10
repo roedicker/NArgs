@@ -5,12 +5,12 @@ using System.Globalization;
 namespace NArgs.Models
 {
   /// <summary>
-  /// Defines the options used for parsing arguments
+  /// Defines the options used for parsing arguments.
   /// </summary>
   public class ParseOptions
   {
     /// <summary>
-    /// Gets or sets the culture used for parsing arguments
+    /// Gets or sets the culture used for parsing arguments.
     /// </summary>
     public CultureInfo Culture
     {
@@ -19,7 +19,7 @@ namespace NArgs.Models
     }
 
     /// <summary>
-    /// Creates a new instance of the parse options
+    /// Initializes a new instance of the <see cref="ParseOptions" /> class.
     /// </summary>
     public ParseOptions()
     {
