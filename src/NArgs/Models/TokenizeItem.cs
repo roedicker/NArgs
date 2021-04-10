@@ -60,7 +60,7 @@ namespace NArgs.Models
     public bool Failed => ResultStatus == ResultStatus.Failure;
 
     /// <summary>
-    /// Initializes a new instance of a <see cref="TokenizeItem" /> class.
+    /// Initializes a new instance of the <see cref="TokenizeItem" /> class.
     /// </summary>
     public TokenizeItem()
     {
@@ -72,7 +72,7 @@ namespace NArgs.Models
     }
 
     /// <summary>
-    /// Initializes a new instance of a <see cref="TokenizeItem" /> class with initial name and value.
+    /// Initializes a new instance of the <see cref="TokenizeItem" /> class with initial name and value.
     /// </summary>
     /// <param name="name">Name of the item.</param>
     /// <param name="value">Optional. Value of the item. Default value is <see langword="null" />.</param>
@@ -86,7 +86,7 @@ namespace NArgs.Models
     }
 
     /// <summary>
-    /// Initializes a new instance of a <see cref="TokenizeItem" /> class with initial name, error type and error message.
+    /// Initializes a new instance of the <see cref="TokenizeItem" /> class with initial name, error type and error message.
     /// </summary>
     /// <param name="name">Name of the item.</param>
     /// <param name="errorType">Type of error occured.</param>
@@ -110,7 +110,7 @@ namespace NArgs.Models
     /// <inheritdoc />
     public override int GetHashCode()
     {
-      int hashCode = 966633335;
+      var hashCode = 966633335;
       hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
       hashCode = hashCode * -1521134295 + EqualityComparer<string?>.Default.GetHashCode(Value);
       hashCode = hashCode * -1521134295 + ResultStatus.GetHashCode();
@@ -126,8 +126,7 @@ namespace NArgs.Models
     /// <returns><see langword="true" /> if the specified instance is equal, otherwise <see langword="false" />.</returns>
     public virtual bool Equals(TokenizeItem? other)
     {
-      return other == null ?
-             false :
+      return other != null &&
              Comparer.IsEqual(Name, other.Name) &&
              Comparer.IsEqual(Value, other.Value) &&
              ResultStatus == other.ResultStatus &&

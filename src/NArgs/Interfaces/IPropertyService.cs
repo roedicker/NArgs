@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 
+using NArgs.Attributes;
+
 namespace NArgs
 {
   /// <summary>
@@ -22,7 +24,7 @@ namespace NArgs
   public delegate bool PropertyServiceCustomDataTypeValidator(string name, string? value, bool required);
 
   /// <summary>
-  /// Defines a property service
+  /// Defines a property service.
   /// </summary>
   public interface IPropertyService
   {
@@ -47,19 +49,48 @@ namespace NArgs
     /// <returns>Property information of given option.</returns>
     PropertyInfo GetPropertyByOptionName(string name);
 
+
+    /// <summary>
+    /// Gets the property information of a command by its name.
+    /// </summary>
+    /// <param name="name">Name of the command.</param>
+    /// <returns>Property information of given command.</returns>
+    PropertyInfo GetPropertyByCommandName(string name);
+
     /// <summary>
     /// Gets an indicator whether a property is required or not.
     /// </summary>
-    /// <param name="property">Property information.</param>
+    /// <param name="prop">Property information.</param>
     /// <returns>Indicator whether a property is required or not.</returns>
-    bool IsRequired(PropertyInfo property);
+    bool IsRequired(PropertyInfo prop);
 
     /// <summary>
     /// Gets the name of an option-property.
     /// </summary>
-    /// <param name="property">Property information of an option.</param>
+    /// <param name="prop">Property information of an option.</param>
     /// <returns>Name of the option.</returns>
-    string GetOptionName(PropertyInfo property);
+    string GetOptionName(PropertyInfo prop);
+
+    /// <summary>
+    /// Gets the option of given property.
+    /// </summary>
+    /// <param name="prop">Property information of an option.</param>
+    /// <returns>Option attribute.</returns>
+    OptionAttribute GetOption(PropertyInfo prop);
+
+    /// <summary>
+    /// Gets the parameter of given property.
+    /// </summary>
+    /// <param name="prop">Property information of a parameter.</param>
+    /// <returns>Parameter attribute.</returns>
+    ParameterAttribute GetParameter(PropertyInfo prop);
+
+    /// <summary>
+    /// Gets the command of given property.
+    /// </summary>
+    /// <param name="prop">Property information of a command.</param>
+    /// <returns>Command attribute.</returns>
+    CommandAttribute GetCommand(PropertyInfo prop);
 
     /// <summary>
     /// Gets all property information based on the configuration.
@@ -68,25 +99,60 @@ namespace NArgs
     IEnumerable<PropertyInfo> GetProperties();
 
     /// <summary>
+    /// Gets an indicator whether one of the properties of the configuration is a command.
+    /// </summary>
+    /// <returns><see langword="true" /> if one of the properties of the configuration is a command, otherwise <see langword="false" />.</returns>
+    bool HasCommands();
+
+    /// <summary>
+    /// Gets an indicator whether one of the properties of the configuration is an option.
+    /// </summary>
+    /// <returns><see langword="true" /> if one of the properties of the configuration is an option, otherwise <see langword="false" />.</returns>
+    bool HasOptions();
+
+    /// <summary>
+    /// Gets an indicator whether one of the properties of the configuration is a parameter.
+    /// </summary>
+    /// <returns><see langword="true" /> if one of the properties of the configuration is a parameter, otherwise <see langword="false" />.</returns>
+    bool HasParameters();
+
+    /// <summary>
     /// Gets all required options names which have not been assigned a value, yet.
     /// </summary>
     /// <returns>All required option names which have not been assigned a value.</returns>
     IEnumerable<string> GetUnassignedRequiredOptionNames();
 
     /// <summary>
-    /// Sets a property value
+    /// Gets a property value.
     /// </summary>
-    /// <param name="property">Property information.</param>
+    /// <param name="prop">Property information.</param>
+    object GetPropertyValue(PropertyInfo prop);
+
+    /// <summary>
+    /// Sets the current command configuration.
+    /// </summary>
+    /// <param name="command">Current command.</param>
+    void SetCurrentCommand(object command);
+
+    /// <summary>
+    /// Resets the current command configuration.
+    /// </summary>
+    void ResetCurrentCommand();
+
+    /// <summary>
+    /// Sets a property value.
+    /// </summary>
+    /// <param name="prop">Property information.</param>
     /// <param name="value">Value to be set.</param>
-    void SetPropertyValue(PropertyInfo property, string? value);
+    void SetPropertyValue(PropertyInfo prop, string? value);
 
     /// <summary>
     /// Gets an indicator whether a property value is valid or not.
     /// </summary>
-    /// <param name="property">Property information.</param>
+    /// <param name="prop">Property information.</param>
     /// <param name="value">Value to be validated.</param>
     /// <returns>Indicator whether the property value is valid or not.</returns>
-    bool IsValidValue(PropertyInfo property, string? value);
+    bool IsValidValue(PropertyInfo prop, string? value);
 
     /// <summary>
     /// Gets an indicator whether an option value is valid or not.
@@ -97,7 +163,7 @@ namespace NArgs
     bool IsValidOptionValue(string name, string? value);
 
     /// <summary>
-    /// Adds a handler for a custom data-type
+    /// Adds a handler for a custom data-type.
     /// </summary>
     /// <param name="type">Data-type that should be handled.</param>
     /// <param name="setter">Setter of the custom data-type.</param>

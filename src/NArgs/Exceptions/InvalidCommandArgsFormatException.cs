@@ -5,13 +5,13 @@ using System.Security.Permissions;
 namespace NArgs
 {
   /// <summary>
-  /// Defines an exception regarding an invalid command argument format
+  /// Defines an exception regarding an invalid command argument format.
   /// </summary>
   [Serializable]
   public class InvalidCommandArgsFormatException : Exception
   {
     /// <summary>
-    /// Gets the message of the exception
+    /// Gets the message of the exception.
     /// </summary>
     public override string Message
     {
@@ -22,7 +22,7 @@ namespace NArgs
     }
 
     /// <summary>
-    /// Gets the name of the item parsed which caused the exception
+    /// Gets the name of the item parsed which caused the exception.
     /// </summary>
     public string ItemName
     {
@@ -31,7 +31,7 @@ namespace NArgs
     }
 
     /// <summary>
-    /// Creates a new instance of this exception
+    /// Instantiates a new instance of the <see cref="InvalidCommandArgsFormatException" /> class.
     /// </summary>
     internal InvalidCommandArgsFormatException() : base()
     {
@@ -40,7 +40,7 @@ namespace NArgs
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="InvalidCommandArgsFormatException" /> with specified error message.
+    /// Initializes a new instance of the <see cref="InvalidCommandArgsFormatException" /> class with specified error message.
     /// </summary>
     /// <param name="message">Error message of exception.</param>
     public InvalidCommandArgsFormatException(string message) : base(message)
@@ -80,7 +80,7 @@ namespace NArgs
     /// <summary>
     /// Initializes a new instance of the <see cref="InvalidCommandArgsFormatException" /> class with specified error message and optional item name.
     /// </summary>
-    /// <param name="message">Error message of the exception</param>
+    /// <param name="message">Error message of the exception.</param>
     /// <param name="itemName">Optional. Item name of the exception. Default value is <see langword="null" />.</param>
     public InvalidCommandArgsFormatException(string message, string? itemName = null) : base(message)
     {
@@ -97,7 +97,7 @@ namespace NArgs
     }
 
     /// <summary>
-    /// Creates a new instance of tis exception with given message, item name and inner exception
+    /// Initializes a new instance of the <see cref="InvalidCommandArgsFormatException" /> class with given message, item name and inner exception
     /// </summary>
     /// <param name="message">Exception message</param>
     /// <param name="itemName">Item name of the exception</param>

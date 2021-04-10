@@ -10,21 +10,21 @@ namespace NArgsTest.PropertyServiceTests.Data
 {
   public class InvalidParameterOrdinalNumberConfiguration
   {
-    [Parameter(Name = "p1", OrdinalNumber = 0)]
+    [ParameterAttribute(Name = "p1", OrdinalNumber = 0)]
     public string Parameter1
     {
       get;
       set;
     }
 
-    [Parameter(Name = "p2", OrdinalNumber = 1)]
+    [ParameterAttribute(Name = "p2", OrdinalNumber = 1)]
     public string Parameter2
     {
       get;
       set;
     }
 
-    [Parameter(Name = "p3", OrdinalNumber = 2)]
+    [ParameterAttribute(Name = "p3", OrdinalNumber = 2)]
     public string Parameter3
     {
       get;

@@ -2,97 +2,96 @@ using System;
 using System.IO;
 using System.Linq;
 
-
 namespace NArgs
 {
   /// <summary>
-  /// Provides informations regarding the file-system
+  /// Provides informations regarding the file-system.
   /// </summary>
   public static class FileSystemInfo
   {
     /// <summary>
-    /// Gets an indicator whether a given name is a valid directory name or not
+    /// Gets an indicator whether a given name is a valid directory name or not.
     /// </summary>
-    /// <param name="name">Name to validate</param>
-    /// <returns><c>true</c> if the given name is valid, otherwise <c>false</c>.</returns>
+    /// <param name="name">Name to validate.</param>
+    /// <returns><see langword="true" /> if the given name is valid, otherwise <see langword="false" />.</returns>
     public static bool IsValidDirectoryName(string name)
     {
-      bool Result = true;
+      var result = true;
 
       if (string.IsNullOrWhiteSpace(name))
       {
-        Result = false;
+        result = false;
       }
 
-      if (Result == true)
+      if (result == true)
       {
-        string[] asNames = name.Split(Path.DirectorySeparatorChar);
+        var names = name.Split(Path.DirectorySeparatorChar);
 
-        for (int i = 0; i < asNames.Length - 1; i++)
+        for (var i = 0; i < names.Length - 1; i++)
         {
-          foreach (char cChar in asNames[i])
+          foreach (var chracter in names[i])
           {
-            if (Path.GetInvalidPathChars().Contains(cChar))
+            if (Path.GetInvalidPathChars().Contains(chracter))
             {
-              Result = false;
+              result = false;
               break;
             }
           }
 
-          if (Result == false)
+          if (result == false)
           {
             break;
           }
         }
       }
 
-      return Result;
+      return result;
     }
 
     /// <summary>
-    /// Gets an indicator whether a given name is a valid file name or not
+    /// Gets an indicator whether a given name is a valid file name or not.
     /// </summary>
-    /// <param name="name">Name to validate</param>
-    /// <returns><c>true</c> if the given name is valid, otherwise <c>false</c>.</returns>
+    /// <param name="name">Name to validate.</param>
+    /// <returns><see langword="true" /> if the given name is valid, otherwise <see langword="false" />.</returns>
     public static bool IsValidFileName(string name)
     {
-      bool Result = true;
+      var result = true;
 
       if (string.IsNullOrWhiteSpace(name))
       {
-        Result = false;
+        result = false;
       }
 
-      if (Result == true)
+      if (result == true)
       {
-        string[] asNames = name.Split(Path.DirectorySeparatorChar);
+        var names = name.Split(Path.DirectorySeparatorChar);
 
-        for (int i = 0; i < asNames.Length; i++)
+        for (var i = 0; i < names.Length; i++)
         {
-          if (i < asNames.Length - 2)
+          if (i < names.Length - 2)
           {
-            Result = IsValidDirectoryName(asNames[i]);
+            result = IsValidDirectoryName(names[i]);
           }
           else
           {
-            foreach (char cChar in asNames[i])
+            foreach (var character in names[i])
             {
-              if (Path.GetInvalidFileNameChars().Contains(cChar))
+              if (Path.GetInvalidFileNameChars().Contains(character))
               {
-                Result = false;
+                result = false;
                 break;
               }
             }
           }
 
-          if (Result == false)
+          if (result == false)
           {
             break;
           }
         }
       }
 
-      return Result;
+      return result;
     }
   }
 }

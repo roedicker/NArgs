@@ -7,12 +7,12 @@ using NArgs.Services;
 namespace NArgs
 {
   /// <summary>
-  /// Defines the console command line argument parser
+  /// Defines the console command line argument parser.
   /// </summary>
   public class ConsoleCommandLineParser : CommandLineParser, IArgumentParser
   {
     /// <summary>
-    /// Initializes a new instance of a <see cref="ConsoleCommandLineParser" /> class.
+    /// Initializes a new instance of the <see cref="ConsoleCommandLineParser" /> class.
     /// </summary>
     /// <param name="configuration">Configuration attached to this parser.</param>
     public ConsoleCommandLineParser(object configuration) : base(new ConsoleArgumentTokenizer(), new DefaultPropertyService(configuration))
@@ -21,7 +21,7 @@ namespace NArgs
     }
 
     /// <summary>
-    /// Initializes a new instance of a <see cref="ConsoleCommandLineParser" /> class with custom options.
+    /// Initializes a new instance of the <see cref="ConsoleCommandLineParser" /> class with custom options.
     /// </summary>
     /// <param name="configuration">Configuration attached to this parser.</param>
     /// <param name="options">Commandline parser options to use.</param>

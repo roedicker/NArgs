@@ -14,21 +14,19 @@ namespace NArgsTest
   public class SimpleRequiredConfigTests
   {
     [TestMethod]
-    public void Get_Usage_Via_Interface_Should_Be_Valid()
+    public void GetUsageText_Should_Be_As_Expected()
     {
       var target = new ConsoleCommandLineParser(new SimpleRequiredConfig());
       var expected = @"SYNTAX:
-  Unit Test /required1 | --required-option1 <option>
-            /required2 | --required-option2 <option>
-            [/optional | --optional-option <option>]
+  UnitTest /R1 /R2 [/O] 
 
-OPTIONS:
-  /required1 | --required-option1     Example required option #1
-  /optional | --optional-option       Example optional option
-  /required2 | --required-option2     Example required option #2
+  OPTIONS:
+    /R1 | --required-option1    Example required option #1
+    /R2 | --required-option2    Example required option #2
+    /O | --optional-option      Example optional option
 ";
 
-      var actual = target.GetUsage("Unit Test");
+      var actual = target.GetUsageText("UnitTest");
 
       Assert.AreEqual(expected, actual);
     }
@@ -38,7 +36,7 @@ OPTIONS:
     {
       var data = new SimpleRequiredConfig();
       var target = new ConsoleCommandLineParser(data);
-      target.ParseArguments(@"/required1:""abc"" -required2:123");
+      target.ParseArguments(@"/R1:""abc"" -R2:123");
 
       Assert.AreEqual("abc", data.RequiredOption1);
       Assert.AreEqual(123, data.RequiredOption2);
@@ -48,7 +46,7 @@ OPTIONS:
     public void Missing_Required_Option1_Should_be_Parsed_With_Error()
     {
       var target = new ConsoleCommandLineParser(new SimpleRequiredConfig());
-      var actual = target.ParseArguments(@"-required2:123");
+      var actual = target.ParseArguments(@"-R2:123");
 
       Assert.AreEqual(ResultStatus.Failure, actual.Status);
       Assert.AreEqual(1, actual.Errors.Count());
@@ -56,14 +54,14 @@ OPTIONS:
       var error = actual.Errors.First();
 
       Assert.AreEqual(ParseErrorType.RequiredOptionValue, error.ErrorType);
-      Assert.AreEqual("required1", error.ItemName);
+      Assert.AreEqual("R1", error.ItemName);
     }
 
     [TestMethod]
     public void Missing_Required_Option2_Shoud_be_Parsed_With_Error()
     {
       var target = new ConsoleCommandLineParser(new SimpleRequiredConfig());
-      var actual = target.ParseArguments(@"-required1 ""abc""");
+      var actual = target.ParseArguments(@"-R1 ""abc""");
 
       Assert.AreEqual(ResultStatus.Failure, actual.Status);
       Assert.AreEqual(1, actual.Errors.Count());
@@ -71,7 +69,7 @@ OPTIONS:
       var error = actual.Errors.First();
 
       Assert.AreEqual(ParseErrorType.RequiredOptionValue, error.ErrorType);
-      Assert.AreEqual("required2", error.ItemName);
+      Assert.AreEqual("R2", error.ItemName);
     }
 
     [TestMethod]
@@ -85,11 +83,11 @@ OPTIONS:
 
       var error = actual.Errors.First();
       Assert.AreEqual(ParseErrorType.RequiredOptionValue, error.ErrorType);
-      Assert.AreEqual("required1", error.ItemName);
+      Assert.AreEqual("R1", error.ItemName);
 
       error = actual.Errors.Last();
       Assert.AreEqual(ParseErrorType.RequiredOptionValue, error.ErrorType);
-      Assert.AreEqual("required2", error.ItemName);
+      Assert.AreEqual("R2", error.ItemName);
     }
 
     [TestMethod]
@@ -100,22 +98,22 @@ OPTIONS:
       var expected = "http://192.168.1.2/root-path/";
 
       data.RequiredOption1 = null;
-      target.ParseArguments($@"-required1 ""{expected}"" -required2 123");
+      target.ParseArguments($@"-R1 ""{expected}"" -R2 123");
       Assert.AreEqual(expected, data.RequiredOption1);
       Assert.AreEqual(123, data.RequiredOption2);
 
       data.RequiredOption1 = null;
-      target.ParseArguments($@"-required1:""{expected}"" -required2:123");
+      target.ParseArguments($@"-R1:""{expected}"" -R2:123");
       Assert.AreEqual(expected, data.RequiredOption1);
       Assert.AreEqual(123, data.RequiredOption2);
 
       data.RequiredOption1 = null;
-      target.ParseArguments($@"/required1 ""{expected}"" /required2 123");
+      target.ParseArguments($@"/R1 ""{expected}"" /R2 123");
       Assert.AreEqual(expected, data.RequiredOption1);
       Assert.AreEqual(123, data.RequiredOption2);
 
       data.RequiredOption1 = null;
-      target.ParseArguments($@"/required1:""{expected}"" /required2:123");
+      target.ParseArguments($@"/R1:""{expected}"" /R2:123");
       Assert.AreEqual(expected, data.RequiredOption1);
       Assert.AreEqual(123, data.RequiredOption2);
     }

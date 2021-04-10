@@ -24,7 +24,7 @@ namespace NArgs.Services
     }
 
     /// <summary>
-    /// Initializes a new instance of a <see cref="ConsoleArgumentTokenizer" /> class.
+    /// Initializes a new instance of the <see cref="ConsoleArgumentTokenizer" /> class.
     /// </summary>
     public ConsoleArgumentTokenizer()
     {
@@ -32,7 +32,7 @@ namespace NArgs.Services
     }
 
     /// <summary>
-    /// Initializes a new instance of a <see cref="ConsoleArgumentTokenizer"/> class with options.
+    /// Initializes a new instance of the <see cref="ConsoleArgumentTokenizer"/> class with options.
     /// </summary>
     /// <param name="options">Custom options to use for this console argument tokenizer.</param>
     public ConsoleArgumentTokenizer(TokenizeOptions options) : this()
@@ -63,7 +63,7 @@ namespace NArgs.Services
 
         try
         {
-          foreach (char character in argument)
+          foreach (var character in argument)
           {
             if (state == TokenizeState.ScanName)
             {
@@ -202,9 +202,7 @@ namespace NArgs.Services
             }
           }
         }
-#pragma warning disable CA1031 // Do not catch general exception types
         catch (Exception ex)
-#pragma warning restore CA1031 // Do not catch general exception types
         {
           switch (state)
           {

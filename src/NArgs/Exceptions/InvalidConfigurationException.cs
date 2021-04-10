@@ -5,13 +5,13 @@ using System.Security.Permissions;
 namespace NArgs
 {
   /// <summary>
-  /// Defines an exception regarding an invalid command argument format
+  /// Defines an exception regarding an invalid command argument format.
   /// </summary>
   [Serializable]
   public class InvalidConfigurationException : Exception
   {
     /// <summary>
-    /// Gets the message of the exception
+    /// Gets the message of the exception.
     /// </summary>
     public override string Message
     {
@@ -22,7 +22,7 @@ namespace NArgs
     }
 
     /// <summary>
-    /// Creates a new instance of this exception
+    /// Initializes a new instance of the <see cref="InvalidConfigurationException" /> class.
     /// </summary>
     internal InvalidConfigurationException() : base()
     {
@@ -30,7 +30,7 @@ namespace NArgs
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="InvalidConfigurationException" /> with specified error message.
+    /// Initializes a new instance of the <see cref="InvalidConfigurationException" /> class with specified error message.
     /// </summary>
     /// <param name="message">Error message of exception.</param>
     public InvalidConfigurationException(string message) : base(message)
@@ -46,7 +46,7 @@ namespace NArgs
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="InvalidConfigurationException" /> class with specified error messgae
+    /// Initializes a new instance of the <see cref="InvalidConfigurationException" /> class with specified error message.
     /// and a reference to the inner exception that is the cause of this exception.
     /// </summary>
     /// <param name="message">Error message of exception.</param>
