@@ -11,6 +11,12 @@ namespace NArgs
   public delegate void ExecuteCommandHandler(CommandEventArgs e);
 
   /// <summary>
+  /// Handler vor performing an execute help event.
+  /// </summary>
+  /// <param name="e">Command event arguments.</param>
+  public delegate void ExecuteUsageHandler(UsageEventArgs e);
+
+  /// <summary>
   /// Defines an argument parser.
   /// </summary>
   public interface IArgumentParser

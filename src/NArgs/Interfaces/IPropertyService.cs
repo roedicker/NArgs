@@ -99,6 +99,12 @@ namespace NArgs
     IEnumerable<PropertyInfo> GetProperties();
 
     /// <summary>
+    /// Gets all property information based on the global configuration.
+    /// </summary>
+    /// <returns>All property information based on the global configuration.</returns>
+    IEnumerable<PropertyInfo> GetGlobalProperties();
+
+    /// <summary>
     /// Gets an indicator whether one of the properties of the configuration is a command.
     /// </summary>
     /// <returns><see langword="true" /> if one of the properties of the configuration is a command, otherwise <see langword="false" />.</returns>
@@ -127,6 +133,12 @@ namespace NArgs
     /// </summary>
     /// <param name="prop">Property information.</param>
     object GetPropertyValue(PropertyInfo prop);
+
+    /// <summary>
+    /// Gets a global property value.
+    /// </summary>
+    /// <param name="prop">Property information.</param>
+    object GetGlobalPropertyValue(PropertyInfo prop);
 
     /// <summary>
     /// Sets the current command configuration.

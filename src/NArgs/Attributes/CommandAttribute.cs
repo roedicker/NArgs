@@ -3,7 +3,7 @@ using System;
 namespace NArgs.Attributes
 {
   /// <summary>
-  /// Defines a command line command.
+  /// Attribute of a command line command.
   /// </summary>
   [AttributeUsage(AttributeTargets.Property)]
   public sealed class CommandAttribute : Attribute
