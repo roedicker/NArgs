@@ -3,10 +3,10 @@ using System;
 namespace NArgs.Attributes
 {
   /// <summary>
-  /// Defines attribute for a command line option.
+  /// Attribute of a command line option.
   /// </summary>
   [AttributeUsage(AttributeTargets.Property)]
-  public sealed class OptionAttribute : Attribute
+  public class OptionAttribute : Attribute
   {
     /// <summary>
     /// Gets or sets the alternative name of an option.

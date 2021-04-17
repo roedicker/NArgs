@@ -78,6 +78,14 @@ namespace NArgs.Services
     }
 
     /// <inheritdoc />
+    public IEnumerable<PropertyInfo> GetGlobalProperties()
+    {
+      return Configuration
+             .GetType()
+             .GetProperties();
+    }
+
+    /// <inheritdoc />
     public bool HasCommands()
     {
       return GetProperties().Any(prop => prop.IsCommand());
@@ -153,7 +161,7 @@ namespace NArgs.Services
         throw new ArgumentException(Resources.MissingRequiredParameterValueErrorMessage, nameof(name));
       }
 
-      foreach (var property in GetProperties())
+      foreach (var property in GetGlobalProperties())
       {
         if (property.GetCustomAttributes(typeof(CommandAttribute), true).FirstOrDefault() is CommandAttribute command)
         {
@@ -253,6 +261,17 @@ namespace NArgs.Services
       }
 
       return prop.GetValue(GetCurrentConfiguration());
+    }
+
+    /// <inheritdoc />
+    public object GetGlobalPropertyValue(PropertyInfo prop)
+    {
+      if (prop == null)
+      {
+        throw new ArgumentNullException(nameof(prop));
+      }
+
+      return prop.GetValue(Configuration);
     }
 
     /// <inheritdoc />

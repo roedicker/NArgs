@@ -46,6 +46,10 @@
     <Otherwise />
   </Choose>
   <ItemGroup>
+    <Compile Include="CommandLineParserTests\ConsoleCommandLineParserTests\HelpOptionTests.cs" />
+    <Compile Include="CommandLineParserTests\Data\TestCommand.cs" />
+    <Compile Include="CommandLineParserTests\Data\TestCommandConfiguration.cs" />
+    <Compile Include="CommandLineParserTests\Data\TestHelpOptionConfiguration.cs" />
     <Compile Include="PropertyServiceTests\Data\DuplicateOptionLongNameConfiguration.cs" />
     <Compile Include="PropertyServiceTests\Data\DuplicateOptionAlternativeNameConfiguration.cs" />
     <Compile Include="PropertyServiceTests\Data\DuplicateOptionNameConfiguration.cs" />
@@ -54,7 +58,6 @@
     <Compile Include="PropertyServiceTests\Data\InvalidParameterOrdinalNumberSequenceConfiguration.cs" />
     <Compile Include="PropertyServiceTests\Data\InvalidParameterOrdinalNumberConfiguration.cs" />
     <Compile Include="PropertyServiceTests\Data\MissingOptionNameConfiguration.cs" />
-    <Compile Include="CommandLineParserTests\Data\ValidCommandConfiguration.cs" />
     <Compile Include="CommandLineParserTests\ConsoleCommandLineParserTests\CommandTests.cs" />
     <Compile Include="PropertyServiceTests\DefaultPropertyServiceTests\OptionTests.cs" />
     <Compile Include="PropertyServiceTests\DefaultPropertyServiceTests\ParameterTests.cs" />

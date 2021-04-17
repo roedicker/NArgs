@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-
-using StringCollection = NCollections.StringCollection;
 
 using NExtents;
 
@@ -22,6 +19,9 @@ namespace NArgs
   {
     /// <inheritdoc />
     public event ExecuteCommandHandler? ExecuteCommand;
+
+    /// <inheritdoc />
+    public event ExecuteUsageHandler? ExecuteUsage;
 
     /// <summary>
     /// Gets the property service.
@@ -144,7 +144,7 @@ namespace NArgs
 
       var prop = PropertyService.GetPropertyByCommandName(commandName);
       var command = PropertyService.GetCommand(prop);
-      var commandObject = PropertyService.GetPropertyValue(prop);
+      var commandObject = PropertyService.GetGlobalPropertyValue(prop);
       var result = new StringBuilder();
 
       PropertyService.SetCurrentCommand(commandObject);
@@ -207,6 +207,7 @@ namespace NArgs
 
       var result = new ParseResult();
       object? command = null;
+      object? helpOption = null;
       var commandName = string.Empty;
 
       try
@@ -226,8 +227,16 @@ namespace NArgs
           var item = items[i];
           var nextItem = (i + 1) < items.Count ? items[i + 1] : null;
 
+          var prop = DetermineHelpOptionProperty(item);
+
+          if (prop != null)
+          {
+            helpOption = PropertyService.GetGlobalPropertyValue(prop);
+            continue;
+          }
+
           // check if item refers to an option
-          var prop = DetermineOptionProperty(item);
+          prop = DetermineOptionProperty(item);
 
           if (prop != null)
           {
@@ -348,7 +357,18 @@ namespace NArgs
         result.AddError(new ParseError(ParseErrorType.UnknownError, Resources.NotAvailableShortName, null, ex.Message));
       }
 
-      if (result.Success && command != null)
+      if (result.Success && helpOption != null)
+      {
+        if (command == null)
+        {
+          ExecuteUsage?.Invoke(new UsageEventArgs());
+        }
+        else
+        {
+          ExecuteUsage?.Invoke(new UsageEventArgs(commandName));
+        }
+      }
+      else if (result.Success && command != null)
       {
         ExecuteCommand?.Invoke(new CommandEventArgs(commandName, command));
 
@@ -420,11 +440,30 @@ namespace NArgs
                                                });
 
       return PropertyService.GetProperties()
-                                 .FirstOrDefault(p => p.GetCustomAttributes(typeof(OptionAttribute), true).FirstOrDefault() is OptionAttribute option &&
-                                                      (option.Name == itemName ||
-                                                       option.AlternativeName == itemName ||
-                                                       option.LongName == itemName
-                                                      ));
+                            .FirstOrDefault(p => p.GetCustomAttributes(typeof(OptionAttribute), true).FirstOrDefault() is OptionAttribute option &&
+                                                 (option.Name == itemName ||
+                                                  option.AlternativeName == itemName ||
+                                                  option.LongName == itemName));
+    }
+
+    /// <summary>
+    /// Gets a help option property for given tokenize item.
+    /// </summary>
+    /// <param name="item">Tokenize item.</param>
+    /// <returns>Help option property for given tokenize item or <see langword="null" /> if not found.</returns>
+    private PropertyInfo? DetermineHelpOptionProperty(TokenizeItem item)
+    {
+      // check if current token is an option
+      var itemName = item.Name.TrimStart(new[] { TokenizeOptions.ArgumentOptionLongNameIndicator,
+                                                 TokenizeOptions.ArgumentOptionAlternativeNameIndicator,
+                                                 TokenizeOptions.ArgumentOptionDefaultNameIndicator
+                                               });
+
+      return PropertyService.GetGlobalProperties()
+                            .FirstOrDefault(p => p.GetCustomAttributes(typeof(HelpOptionAttribute), true).FirstOrDefault() is HelpOptionAttribute helpOption &&
+                                                 (helpOption.Name == itemName ||
+                                                  helpOption.AlternativeName == itemName ||
+                                                  helpOption.LongName == itemName));
     }
 
     /// <summary>

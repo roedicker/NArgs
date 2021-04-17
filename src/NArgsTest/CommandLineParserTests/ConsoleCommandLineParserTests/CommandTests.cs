@@ -13,7 +13,7 @@ namespace NArgsTest.CommandLineParserTests.ConsoleCommandLineParserTests
     [TestMethod]
     public void GetUsageText_Should_Be_As_Expected()
     {
-      var target = new ConsoleCommandLineParser(new ValidCommandConfiguration());
+      var target = new ConsoleCommandLineParser(new TestCommandConfiguration());
       var expected = @"SYNTAX:
   UnitTest  <command> [/s1] 
 
@@ -32,7 +32,7 @@ namespace NArgsTest.CommandLineParserTests.ConsoleCommandLineParserTests
     [TestMethod]
     public void GetCommandUsageText_Should_Be_As_Expected()
     {
-      var data = new ValidCommandConfiguration();
+      var data = new TestCommandConfiguration();
       var target = new ConsoleCommandLineParser(data);
       var expected = @"c1: Example command #1
 
@@ -55,7 +55,7 @@ SYNTAX:
     public void Command_Should_Raise_Proper_Event()
     {
       object command = null;
-      var data = new ValidCommandConfiguration();
+      var data = new TestCommandConfiguration();
       var target = new ConsoleCommandLineParser(data);
       target.ExecuteCommand += (e) => command = e.CommandTarget;
 
@@ -68,7 +68,7 @@ SYNTAX:
     [TestMethod]
     public void Command_Option_Should_Be_Set()
     {
-      var data = new ValidCommandConfiguration();
+      var data = new TestCommandConfiguration();
       var target = new ConsoleCommandLineParser(data);
 
       target.ParseArguments("c1 /s2 value");
@@ -79,7 +79,7 @@ SYNTAX:
     [TestMethod]
     public void Command_Parameter_Should_Be_Set()
     {
-      var data = new ValidCommandConfiguration();
+      var data = new TestCommandConfiguration();
       var target = new ConsoleCommandLineParser(data);
 
       target.ParseArguments("c1 value");
