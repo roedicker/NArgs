@@ -1,5 +1,5 @@
 using System;
-
+using System.Security;
 using NArgs.Attributes;
 
 namespace NArgsTest.Data
@@ -131,6 +131,13 @@ namespace NArgsTest.Data
       get;
       set;
     }
+
+    [Option(Name = "sstring", LongName = "secure-string")]
+    public SecureString SecureStringOption
+    {
+      get;
+      set;
+    } = new SecureString();
   }
 }
 

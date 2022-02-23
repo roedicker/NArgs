@@ -63,7 +63,12 @@ namespace NArgs
     public const string String = "System.String";
 
     /// <summary>
-    /// Defines the name of a system unsigned 16-bit integer.
+    /// Defines the name of a system secure string
+    /// </summary>
+    public const string SecureString = "System.Security.SecureString";
+
+    /// <summary>
+   /// Defines the name of a system unsigned 16-bit integer.
     /// </summary>
     public const string UInt16 = "System.UInt16";
 

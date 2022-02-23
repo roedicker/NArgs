@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using NArgs;
+using NArgs.Extensions;
 
 using NArgsTest.Data;
 
@@ -271,11 +272,23 @@ namespace NArgsTest
     {
       var data = new SimpleValidConfig();
       var target = new ConsoleCommandLineParser(data);
-      double value = 3.14159265358979;
+      var value = 3.14159265358979;
 
       target.ParseArguments($@"--double {value.ToString(target.Options.Culture)}");
 
       Assert.AreEqual(value, data.DoubleValueOption);
+    }
+
+    [TestMethod]
+    public void Valid_SecureString_Option_Should_Be_Parsed()
+    {
+      var data = new SimpleValidConfig();
+      var target = new ConsoleCommandLineParser(data);
+
+      var value = "this is my secret";
+      target.ParseArguments($@"-secure-string ""{value}""");
+
+      Assert.AreEqual(value, data.SecureStringOption.GetString());
     }
 
     [TestMethod]
@@ -492,7 +505,7 @@ namespace NArgsTest
       var data = new SimpleValidConfig();
       var target = new ConsoleCommandLineParser(data);
 
-      string expected = "http://192.168.1.2/root-path/";
+      var expected = "http://192.168.1.2/root-path/";
 
       data.StringValueOption = null;
       target.ParseArguments($@"-s ""{expected}""");

@@ -86,6 +86,7 @@ There are some built-in .NET data types which are supported directly by `NArgs`.
 | Int16 / short   |
 | Int32 / int     |
 | Int64 / long    |
+| SecureString    |
 | Single / float  |
 | String          |
 | UInt16 / ushort |

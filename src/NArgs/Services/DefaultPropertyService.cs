@@ -4,12 +4,10 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-
+using System.Security;
 using NArgs.Attributes;
 using NArgs.Extensions;
 using NArgs.Models;
-
-using NExtents;
 
 namespace NArgs.Services
 {
@@ -314,6 +312,10 @@ namespace NArgs.Services
             prop.SetValue(GetCurrentConfiguration(), value);
             break;
 
+          case PropertyTypeFullName.SecureString:
+            ((SecureString)prop.GetValue(GetCurrentConfiguration())).SetString(value);
+            break;
+
           case PropertyTypeFullName.Boolean:
 
             if (IsBooleanTrueValue(value))
@@ -447,6 +449,7 @@ namespace NArgs.Services
             break;
 
           case PropertyTypeFullName.String:
+          case PropertyTypeFullName.SecureString:
             result = true;
             break;
 
