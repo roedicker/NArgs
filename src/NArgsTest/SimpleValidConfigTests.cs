@@ -5,6 +5,7 @@ using System.Threading;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using NArgs;
+using NArgs.Extensions;
 using NArgs.Models;
 
 using NArgsTest.Data;
@@ -265,6 +266,18 @@ namespace NArgsTest
       {
         Thread.CurrentThread.CurrentCulture = oCurrentCulture;
       }
+    }
+
+    [TestMethod]
+    public void Valid_SecureString_Option_Should_Be_Parsed()
+    {
+      SimpleValidConfig oConfig = new SimpleValidConfig();
+      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+
+      string value = "this is my secret";
+      oParser.ParseArguments(oConfig, $@"-secure-string ""{value}""");
+
+      Assert.AreEqual(value, oConfig.SecureStringOption.GetString());
     }
 
     [TestMethod]
