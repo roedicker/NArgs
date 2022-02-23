@@ -3,9 +3,9 @@
     <TargetFrameworks Condition="'$(LibraryFrameworks)'==''">net45;netstandard2.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(LibraryFrameworks)'!=''">$(LibraryFrameworks)</TargetFrameworks>
     <LangVersion>9.0</LangVersion>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0</FileVersion>
-    <Version>1.0.0</Version>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0</FileVersion>
+    <Version>1.1.0</Version>
     <Company>Mark Rödicker</Company>
     <Product>NArgs</Product>
     <Description>Command argument processing for .NET</Description>
@@ -16,7 +16,7 @@
     <PackageTags>Args Argument Arguments Command CommandLine Parser</PackageTags>
     <PackageProjectUrl>https://github.com/roedicker/NArgs/wiki</PackageProjectUrl>
     <RepositoryUrl>https://github.com/roedicker/NArgs</RepositoryUrl>
-    <PackageReleaseNotes>Added support for .NET Framework 4.5 and .NET Standard 2.0
+    <PackageReleaseNotes>Added support of SecureString as a build-in data type.
     </PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-
+using System.Security;
 using NArgs.Attributes;
 using NArgs.Models;
 
@@ -224,6 +224,10 @@ namespace NArgs.Services
             property.SetValue(this.Config, value);
             break;
 
+          case PropertyTypeFullName.SecureString:
+            ((SecureString)property.GetValue(this.Config)).SetString(value);
+            break;
+
           case PropertyTypeFullName.Boolean:
 
             if (IsBooleanTrueValue(value))
@@ -329,7 +333,7 @@ namespace NArgs.Services
     /// <returns><c>true</c> if value is valid, otherwise <c>false</c>.</returns>
     public bool IsValidValue(PropertyInfo info, string value)
     {
-      if(info == null)
+      if (info == null)
       {
         throw new ArgumentNullException(nameof(info));
       }
@@ -358,6 +362,7 @@ namespace NArgs.Services
             break;
 
           case PropertyTypeFullName.String:
+          case PropertyTypeFullName.SecureString:
             Result = true;
             break;
 

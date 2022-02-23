@@ -113,7 +113,9 @@ namespace NArgs
                 {
                   case CommandArgsItemType.Option:
 
-                    if (oOption.Name == oItem.Name || oOption.AlternativeName == oItem.Name)
+                    if (oOption.Name == oItem.Name ||
+                        oOption.LongName == oItem.Name ||
+                        oOption.AlternativeName == oItem.Name)
                     {
                       if (this.PropertyService.IsValidOptionValue(oItem.Name, oItem.Value))
                       {
