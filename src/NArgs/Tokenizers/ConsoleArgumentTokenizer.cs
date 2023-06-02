@@ -1,191 +1,217 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-
 using NArgs.Models;
-
 using NExtents;
 
-namespace NArgs.Services
+namespace NArgs.Services;
+
+/// <summary>
+/// Defines the console argument tokenizer.
+/// </summary>
+internal class ConsoleArgumentTokenizer : ICommandTokenizer
 {
-  internal class ConsoleArgumentTokenizer : ICommandTokenizer
-  {
+    /// <summary>
+    /// Gets the parse options.
+    /// </summary>
     protected ParseOptions Options
     {
-      get;
+        get;
     }
 
-    /// <summary>
-    /// Gets the default command argument option indicator
-    /// </summary>
+    /// <inheritdoc />
     public string ArgumentOptionDefaultNameIndicator
     {
-      get
-      {
-        return this.Options.ArgumentOptionDefaultNameIndicator;
-      }
+        get
+        {
+            return Options.ArgumentOptionDefaultNameIndicator;
+        }
+    }
+
+    /// <inheritdoc />
+    public string ArgumentOptionLongNameIndicator
+    {
+        get
+        {
+            return Options.ArgumentOptionLongNameIndicator;
+        }
+    }
+
+    /// <inheritdoc />
+    public IEnumerable<CommandArgsItem> Items
+    {
+        get;
+        private set;
     }
 
     /// <summary>
-    /// Gets the long name command argument option indicator
+    /// Initializes a new instance of the console argument tokenizer.
     /// </summary>
-    public string ArgumentOptionLongNameIndicator
-    {
-      get
-      {
-        return this.Options.ArgumentOptionLongNameIndicator;
-      }
-    }
-
-    public IEnumerable<CommandArgsItem> Items
-    {
-      get;
-      private set;
-    }
-
     public ConsoleArgumentTokenizer()
     {
-      this.Items = new List<CommandArgsItem>();
-      this.Options = new ParseOptions();
+        Items = new List<CommandArgsItem>();
+        Options = new ParseOptions();
     }
 
+    /// <summary>
+    /// Initializes a new instance of the console argument tokenizer with initial parse options.
+    /// </summary>
+    /// <param name="options">Parse options.</param>
+    /// <exception cref="ArgumentNullException">No parse options provided.</exception>
     public ConsoleArgumentTokenizer(ParseOptions options) : this()
     {
-      this.Options = options ?? throw new ArgumentNullException(nameof(options));
+        Options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
+    /// <inheritdoc />
     public IEnumerable<CommandArgsItem> Tokenize(string[] args)
     {
-      if (args == null)
-      {
-        throw new ArgumentNullException(nameof(args));
-      }
-
-      List<CommandArgsItem> Result = new List<CommandArgsItem>();
-      string sLastArgument = String.Empty;
-
-      foreach (string sCmdArg in args)
-      {
-        string sArgument = sCmdArg.Trim();
-
-        if (String.IsNullOrWhiteSpace(sLastArgument))
+        if (args is null)
         {
-          sLastArgument = sArgument;
+            throw new ArgumentNullException(nameof(args));
         }
-        else
+
+        var result = new List<CommandArgsItem>();
+        var lastArgument = string.Empty;
+
+        foreach (var arg in args)
         {
-          switch (ProcessArguments(Result, sLastArgument, sArgument))
-          {
-            case 0:
-              break;
+            var argument = arg.Trim();
 
-            case 1:
-              sLastArgument = sArgument;
-              break;
+            if (string.IsNullOrWhiteSpace(lastArgument))
+            {
+                lastArgument = argument;
+            }
+            else
+            {
+                switch (ProcessArguments(result, lastArgument, argument))
+                {
+                    case 0:
+                        break;
 
-            case 2:
-              sLastArgument = String.Empty;
-              break;
+                    case 1:
+                        lastArgument = argument;
+                        break;
 
-            default:
-              break;
-          }
+                    case 2:
+                        lastArgument = string.Empty;
+                        break;
+
+                    default:
+                        break;
+                }
+            }
         }
-      }
 
-      if (!String.IsNullOrWhiteSpace(sLastArgument))
-      {
-        if (ProcessArguments(Result, sLastArgument, null) != 1)
+        if (!string.IsNullOrWhiteSpace(lastArgument))
         {
-          throw new Exception("Unknown error");
+            if (ProcessArguments(result, lastArgument, null) != 1)
+            {
+                throw new Exception(Resources.UnknownErrorMessage);
+            }
         }
-      }
 
-      this.Items = Result;
+        Items = result;
 
-      return Result;
+        return result;
     }
 
-    private int ProcessArguments(List<CommandArgsItem> collection, string arg1, string? arg2)
+    /// <summary>
+    /// Processes arguments.
+    /// </summary>
+    /// <param name="collection">Collection of available command argument items.</param>
+    /// <param name="arg1">First argument.</param>
+    /// <param name="arg2">Second argument.</param>
+    /// <returns>Indicator of processing the arguments.</returns>
+    private int ProcessArguments(List<CommandArgsItem> collection,
+        string arg1,
+        string arg2)
     {
-      int Result;
+        int result;
 
-      if (!String.IsNullOrWhiteSpace(arg1) && arg1.StartsWith(this.Options.GetArgumentOptionNameIndicators(), StringComparison.InvariantCultureIgnoreCase))
-      {
-        int iPosOptionValueSeparator = arg1.IndexOf(this.Options.ArgumentOptionValueIndicator, StringComparison.OrdinalIgnoreCase);
-        string sOptionName;
-        string sOptionValue;
-
-        if (iPosOptionValueSeparator == -1)
+        if (!string.IsNullOrWhiteSpace(arg1) && arg1.StartsWith(Options.GetArgumentOptionNameIndicators(), StringComparison.InvariantCultureIgnoreCase))
         {
-          // option name in arg1 available only - check arg2 for value
-          sOptionName = arg1;
+            var optionPositionOfValueSeparator = arg1.IndexOf(Options.ArgumentOptionValueIndicator, StringComparison.OrdinalIgnoreCase);
+            string optionName;
+            string optionValue;
 
-#pragma warning disable CS8604 // Possible null reference argument.
-          if (!String.IsNullOrWhiteSpace(arg2) && !arg2.StartsWith(this.Options.GetArgumentOptionNameIndicators(), StringComparison.InvariantCultureIgnoreCase))
-#pragma warning restore CS8604 // Possible null reference argument.
-          {
-            // arg2 contains a valid value
-            sOptionValue = arg2.Trim(this.Options.ArgumentQuotationCharacter);
-            Result = 2;
-          }
-          else
-          {
-            // arg2 contains either another option or has no value
-            sOptionValue = String.Empty;
-            Result = 1;
-          }
+            if (optionPositionOfValueSeparator == -1)
+            {
+                // option name in arg1 available only - check arg2 for value
+                optionName = arg1;
+
+                if (!string.IsNullOrWhiteSpace(arg2)
+                    && !arg2.StartsWith(Options.GetArgumentOptionNameIndicators(), StringComparison.InvariantCultureIgnoreCase))
+                {
+                    // arg2 contains a valid value
+                    optionValue = arg2.Trim(Options.ArgumentQuotationCharacter);
+                    result = 2;
+                }
+                else
+                {
+                    // arg2 contains either another option or has no value
+                    optionValue = string.Empty;
+                    result = 1;
+                }
+            }
+            else
+            {
+                // option name and value in arg1 available - get value from remaining chunks
+#pragma warning disable IDE0057 // Use range operator - is not defined for .NET standard
+                optionName = arg1.Substring(0, optionPositionOfValueSeparator);
+                optionValue = arg1.Substring(optionPositionOfValueSeparator + 1).Trim(Options.ArgumentQuotationCharacter);
+#pragma warning restore IDE0057 // Use range operator
+                result = 1;
+            }
+
+            collection.Add(CreateCommandArgsItem(optionName, optionValue));
         }
         else
         {
-          // option name and value in arg1 available - get value from remaining chunks
-          sOptionName = arg1.Substring(0, iPosOptionValueSeparator);
-          sOptionValue = arg1.Substring(iPosOptionValueSeparator + 1).Trim(this.Options.ArgumentQuotationCharacter);
-          Result = 1;
+            collection.Add(CreateCommandArgsItem(arg1, string.Empty));
+            result = 1;
         }
 
-        collection.Add(CreateCommandArgsItem(sOptionName, sOptionValue));
-      }
-      else
-      {
-        collection.Add(CreateCommandArgsItem(arg1, String.Empty));
-        Result = 1;
-      }
-
-      return Result;
+        return result;
     }
 
+    /// <summary>
+    /// Creates a command argument item.
+    /// </summary>
+    /// <param name="name">Name of the command argument item.</param>
+    /// <param name="value">Value of the command argument item.</param>
+    /// <returns>Created command argument item.</returns>
+    /// <exception cref="ArgumentNullException">No command name provided.</exception>
     internal CommandArgsItem CreateCommandArgsItem(string name, string value)
     {
-      if (String.IsNullOrWhiteSpace(name))
-      {
-        throw new ArgumentNullException(nameof(name));
-      }
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
 
-      name = name.Trim(this.Options.ArgumentQuotationCharacter).Trim();
+        name = name.Trim(Options.ArgumentQuotationCharacter).Trim();
 
-      CommandArgsItemType oItemType;
+        CommandArgsItemType itemType;
 
-      if (name.StartsWith(this.Options.ArgumentOptionLongNameIndicator, StringComparison.Ordinal))
-      {
-        oItemType = CommandArgsItemType.OptionLongName;
-        name = name.TrimStart(this.Options.ArgumentOptionLongNameIndicator);
-      }
-      else if (name.StartsWith(this.Options.GetArgumentOptionNameIndicators()))
-      {
-        oItemType = CommandArgsItemType.Option;
-        name = name.TrimStart(this.Options.GetArgumentOptionNameIndicators());
-      }
-      else
-      {
-        oItemType = CommandArgsItemType.Parameter;
-      }
+        if (name.StartsWith(Options.ArgumentOptionLongNameIndicator, StringComparison.Ordinal))
+        {
+            itemType = CommandArgsItemType.OptionLongName;
+            name = name.TrimStart(Options.ArgumentOptionLongNameIndicator);
+        }
+        else if (name.StartsWith(Options.GetArgumentOptionNameIndicators()))
+        {
+            itemType = CommandArgsItemType.Option;
+            name = name.TrimStart(Options.GetArgumentOptionNameIndicators());
+        }
+        else
+        {
+            itemType = CommandArgsItemType.Parameter;
+        }
 
-      if (!String.IsNullOrWhiteSpace(value))
-      {
-        value = value.Trim(this.Options.ArgumentQuotationCharacter).Trim();
-      }
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            value = value.Trim(Options.ArgumentQuotationCharacter).Trim();
+        }
 
-      return new CommandArgsItem(oItemType, name, value);
+        return new CommandArgsItem(itemType, name, value);
     }
-  }
 }

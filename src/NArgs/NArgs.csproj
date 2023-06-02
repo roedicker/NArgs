@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks Condition="'$(LibraryFrameworks)'==''">net45;netstandard2.0;netstandard2.1</TargetFrameworks>
+    <TargetFrameworks Condition="'$(LibraryFrameworks)'==''">netstandard2.0;netstandard2.1</TargetFrameworks>
     <TargetFrameworks Condition="'$(LibraryFrameworks)'!=''">$(LibraryFrameworks)</TargetFrameworks>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>11.0</LangVersion>
     <AssemblyVersion>2.0.0.0</AssemblyVersion>
     <FileVersion>2.0.0</FileVersion>
     <Version>2.0.0</Version>
@@ -17,6 +17,7 @@
     <PackageProjectUrl>https://github.com/roedicker/NArgs/wiki</PackageProjectUrl>
     <RepositoryUrl>https://github.com/roedicker/NArgs</RepositoryUrl>
     <PackageReleaseNotes>Added support for .NET Standard 2.1
+    Dropped support for .NET 4.5
     Added support for &quot;Commands&quot;
     </PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -24,7 +25,7 @@
     <RootNamespace>NArgs</RootNamespace>
     <AssemblyName>NArgs</AssemblyName>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <Nullable>enable</Nullable>
+    <Nullable>disable</Nullable>
     <MinClientVersion>2.12</MinClientVersion>
     <IncludeSymbols>true</IncludeSymbols>
     <CodeAnalysisRuleset>NArgs.ruleset</CodeAnalysisRuleset>

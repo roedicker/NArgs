@@ -19,7 +19,7 @@ namespace NArgs {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class Resources {
@@ -70,11 +70,38 @@ namespace NArgs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Command with that given name does not exist.
+        /// </summary>
+        internal static string CommandDoesNotExistErrorMessage {
+            get {
+                return ResourceManager.GetString("CommandDoesNotExistErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to COMMANDS.
+        /// </summary>
+        internal static string CommandsCapitalizedName {
+            get {
+                return ResourceManager.GetString("CommandsCapitalizedName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Missing required parameter value.
         /// </summary>
         internal static string MissingRequiredParameterValueErrorMessage {
             get {
                 return ResourceManager.GetString("MissingRequiredParameterValueErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Multiple commands used.
+        /// </summary>
+        internal static string MultipleCommandsUsedErrorMessage {
+            get {
+                return ResourceManager.GetString("MultipleCommandsUsedErrorMessage", resourceCulture);
             }
         }
         
@@ -124,6 +151,15 @@ namespace NArgs {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to option.
+        /// </summary>
+        internal static string OptionUsageTypeDisplayName {
+            get {
+                return ResourceManager.GetString("OptionUsageTypeDisplayName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to PARAMETERS.
         /// </summary>
         internal static string ParametersCapitalizedName {
@@ -138,6 +174,15 @@ namespace NArgs {
         internal static string ParametersMustPrecedeAnyOptionsErrorMessage {
             get {
                 return ResourceManager.GetString("ParametersMustPrecedeAnyOptionsErrorMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parameters not allowed beside commands.
+        /// </summary>
+        internal static string ParametersNotAllowedBesideCommandsErrorMessage {
+            get {
+                return ResourceManager.GetString("ParametersNotAllowedBesideCommandsErrorMessage", resourceCulture);
             }
         }
         
@@ -174,6 +219,15 @@ namespace NArgs {
         internal static string SyntaxCapitalizedName {
             get {
                 return ResourceManager.GetString("SyntaxCapitalizedName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Unknown error.
+        /// </summary>
+        internal static string UnknownErrorMessage {
+            get {
+                return ResourceManager.GetString("UnknownErrorMessage", resourceCulture);
             }
         }
         

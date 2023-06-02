@@ -1,61 +1,52 @@
-using System;
+﻿using System;
 
-namespace NArgs.Attributes
+namespace NArgs.Attributes;
+
+/// <summary>
+/// Defines a command line parameter.
+/// </summary>
+public sealed class Parameter : Attribute
 {
-  /// <summary>
-  /// Defines a command line parameter
-  /// </summary>
-  public class Parameter : Attribute
-  {
+    private int _ordinalNumber;
+
     /// <summary>
-    /// Gets or sets the ordinal number of a parameter
+    /// Gets or sets the ordinal number of a parameter.
     /// </summary>
     public int OrdinalNumber
     {
-      get
-      {
-        return _OrdinalNumber;
-      }
-
-      set
-      {
-        if (value < 1)
+        get
         {
-          throw new ArgumentOutOfRangeException(nameof(this.OrdinalNumber));
+            return _ordinalNumber;
         }
 
-        _OrdinalNumber = value;
-      }
+        set
+        {
+            if (value < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(OrdinalNumber));
+            }
+
+            _ordinalNumber = value;
+        }
     }
 
     /// <summary>
-    /// Gets or sets the name of a parameter
+    /// Gets or sets the name of a parameter.
     /// </summary>
-    public string Name
-    {
-      get;
-      set;
-    }
+    public string Name { get; set; }
 
     /// <summary>
-    /// Gets or sets the description of a parameter
+    /// Gets or sets the description of a parameter.
     /// </summary>
-    public string Description
-    {
-      get;
-      set;
-    }
+    public string Description { get; set; }
 
     /// <summary>
-    /// Creates a new instance of a command line parameter
+    /// Creates a new instance of a command line parameter.
     /// </summary>
     public Parameter()
     {
-      this.OrdinalNumber = 1;
-      this.Name = String.Empty;
-      this.Description = String.Empty;
+        OrdinalNumber = 1;
+        Name = string.Empty;
+        Description = string.Empty;
     }
-
-    private int _OrdinalNumber;
-  }
 }

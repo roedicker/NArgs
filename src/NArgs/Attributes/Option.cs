@@ -1,77 +1,52 @@
-using System;
+﻿using System;
 
-namespace NArgs.Attributes
+namespace NArgs.Attributes;
+
+/// <summary>
+/// Defines attribute for a command line option.
+/// </summary>
+public sealed class Option : Attribute
 {
-  /// <summary>
-  /// Defines attribute for a command line option
-  /// </summary>
-  public class Option : Attribute
-  {
     /// <summary>
-    /// Gets or sets the alternative name of an option
+    /// Gets or sets the alternative name of an option.
     /// </summary>
-    public string AlternativeName
-    {
-      get;
-      set;
-    }
+    public string AlternativeName { get; set; }
 
     /// <summary>
-    /// Gets or sets the name of an option
+    /// Gets or sets the name of an option.
     /// </summary>
-    public string Name
-    {
-      get;
-      set;
-    }
+    public string Name { get; set; }
 
     /// <summary>
-    /// Gets or sets the long name of an option
+    /// Gets or sets the long name of an option.
     /// </summary>
-    public string LongName
-    {
-      get;
-      set;
-    }
+    public string LongName { get; set; }
 
     /// <summary>
-    /// Gets or sets the description of an option
+    /// Gets or sets the description of an option.
     /// </summary>
-    public string Description
-    {
-      get;
-      set;
-    }
+    public string Description { get; set; }
 
     /// <summary>
-    /// Gets or sets the usage-type for the display name of an option
+    /// Gets or sets the usage-type for the display name of an option.
     /// </summary>
-    public string UsageTypeDisplayName
-    {
-      get;
-      set;
-    }
+    public string UsageTypeDisplayName { get; set; }
 
     /// <summary>
-    /// Gets or sets an indicator whether an option is required or not
+    /// Gets or sets an indicator whether an option is required or not.
     /// </summary>
-    public bool Required
-    {
-      get;
-      set;
-    }
+    public bool Required { get; set; }
 
     /// <summary>
-    /// Creates a new instance of a command line option
+    /// Creates a new instance of a command line option.
     /// </summary>
     public Option()
     {
-      this.AlternativeName = String.Empty;
-      this.Name = String.Empty;
-      this.LongName = String.Empty;
-      this.Required = false;
-      this.Description = String.Empty;
-      this.UsageTypeDisplayName = "option";
+        AlternativeName = string.Empty;
+        Name = string.Empty;
+        LongName = string.Empty;
+        Required = false;
+        Description = string.Empty;
+        UsageTypeDisplayName = Resources.OptionUsageTypeDisplayName;
     }
-  }
 }

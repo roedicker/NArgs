@@ -1,20 +1,17 @@
-using System;
+﻿namespace NArgs;
 
-namespace NArgs
+/// <summary>
+/// Defines the status of a command line parsing.
+/// </summary>
+public enum ResultStatus
 {
-  /// <summary>
-  /// Defines the status of a command line parsing
-  /// </summary>
-  public enum ResultStatus
-  {
     /// <summary>
-    /// Indicates a successful operation
+    /// Indicates a successful operation.
     /// </summary>
     Success,
 
     /// <summary>
-    /// Indicates a failed operation
+    /// Indicates a failed operation.
     /// </summary>
     Failure
-  }
 }

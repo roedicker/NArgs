@@ -1,136 +1,127 @@
-using System;
-using System.Linq;
-
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
+﻿using System.Linq;
 using NArgs;
-using NArgs.Models;
-
 using NArgsTest.Data;
+using NUnit.Framework;
+using Shouldly;
 
-namespace NArgsTest
+namespace NArgsTest;
+
+[TestFixture]
+public class SimpleRequiredConfigTests
 {
-  [TestClass]
-  public class SimpleRequiredConfigTests
-  {
-    [TestMethod]
+    [Test]
     public void Get_Usage_Via_Interface_Should_Be_Valid()
     {
-      SimpleRequiredConfig oConfig = new SimpleRequiredConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
-
-      string expected = @"SYNTAX:
+        var config = new SimpleRequiredConfig();
+        var parser = new ConsoleCommandLineParser();
+        var expected = @"SYNTAX:
   Unit Test /required1 | --required-option1 <option>
             /required2 | --required-option2 <option>
             [/optional | --optional-option <option>]
 
 OPTIONS:
   /required1 | --required-option1     Example required option #1
-  /optional | --optional-option       Example optional option
   /required2 | --required-option2     Example required option #2
+  /optional | --optional-option       Example optional option
 ";
 
-      string actual = oParser.GetUsage(oConfig, "Unit Test");
+        var actual = parser.GetUsage(config, "Unit Test");
 
-      Assert.AreEqual(expected, actual);
+        expected.ShouldBe(actual);
     }
 
-    [TestMethod]
+    [Test]
     public void Valid_Required_Option_Should_Be_Parsed()
     {
-      SimpleRequiredConfig oConfig = new SimpleRequiredConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
-      oParser.ParseArguments(oConfig, @"/required1:""abc"" -required2:123");
+        var optionValue1 = "abc";
+        var optionValue2 = 123;
+        var config = new SimpleRequiredConfig();
+        var parser = new ConsoleCommandLineParser();
+        parser.ParseArguments(config, $@"/required1:""{optionValue1}"" -required2:{optionValue2}");
 
-      Assert.AreEqual("abc", oConfig.RequiredOption1);
-      Assert.AreEqual(123, oConfig.RequiredOption2);
+        config.RequiredOption1.ShouldBe(optionValue1);
+        config.RequiredOption2.ShouldBe(optionValue2);
     }
 
-    [TestMethod]
+    [Test]
     public void Missing_Required_Option1_Should_be_Parsed_With_Error()
     {
-      SimpleRequiredConfig oConfig = new SimpleRequiredConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
-      ParseResult actual;
+        var optionValue = 123;
+        var config = new SimpleRequiredConfig();
+        var parser = new ConsoleCommandLineParser();
+        var actual = parser.ParseArguments(config, $@"-required2:{optionValue}");
 
-      actual = oParser.ParseArguments(oConfig, @"-required2:123");
+        actual.Status.ShouldBe(ResultStatus.Failure);
+        actual.Errors.Count().ShouldBe(1);
 
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(1, actual.Errors.Count());
+        var actualError = actual.Errors.First();
 
-      ParseError oActualError = actual.Errors.First();
-
-      Assert.AreEqual(ParseErrorType.RequiredOptionValue, oActualError.ErrorType);
-      Assert.AreEqual("required1", oActualError.ItemName);
+        actualError.ErrorType.ShouldBe(ParseErrorType.RequiredOptionValue);
+        actualError.ItemName.ShouldBe("required1");
     }
 
-    [TestMethod]
-    public void Missing_Required_Option2_Shoud_be_Parsed_With_Error()
+    [Test]
+    public void Missing_Required_Option2_Should_be_Parsed_With_Error()
     {
-      SimpleRequiredConfig oConfig = new SimpleRequiredConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
-      ParseResult actual;
+        var optionValue = "abc";
+        var config = new SimpleRequiredConfig();
+        var parser = new ConsoleCommandLineParser();
+        var actual = parser.ParseArguments(config, $@"-required1 ""{optionValue}""");
 
-      actual = oParser.ParseArguments(oConfig, @"-required1 ""abc""");
+        actual.Status.ShouldBe(ResultStatus.Failure);
+        actual.Errors.Count().ShouldBe(1);
 
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(1, actual.Errors.Count());
+        var actualError = actual.Errors.First();
 
-      ParseError oActualError = actual.Errors.First();
-
-      Assert.AreEqual(ParseErrorType.RequiredOptionValue, oActualError.ErrorType);
-      Assert.AreEqual("required2", oActualError.ItemName);
+        actualError.ErrorType.ShouldBe(ParseErrorType.RequiredOptionValue);
+        actualError.ItemName.ShouldBe("required2");
     }
 
-    [TestMethod]
+    [Test]
     public void Missing_Required_Options_Should_Be_Parsed_With_Errors()
     {
-      SimpleRequiredConfig oConfig = new SimpleRequiredConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
-      ParseResult actual;
-      ParseError oActualError;
+        var config = new SimpleRequiredConfig();
+        var parser = new ConsoleCommandLineParser();
+        var actual = parser.ParseArguments(config, @"");
 
-      actual = oParser.ParseArguments(oConfig, @"");
+        Assert.AreEqual(ResultStatus.Failure, actual.Status);
+        Assert.AreEqual(2, actual.Errors.Count());
 
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(2, actual.Errors.Count());
+        var actualError = actual.Errors.First();
+        actualError.ErrorType.ShouldBe(ParseErrorType.RequiredOptionValue);
+        actualError.ItemName.ShouldBe("required1");
 
-      oActualError = actual.Errors.First();
-      Assert.AreEqual(ParseErrorType.RequiredOptionValue, oActualError.ErrorType);
-      Assert.AreEqual("required1", oActualError.ItemName);
-
-      oActualError = actual.Errors.Last();
-      Assert.AreEqual(ParseErrorType.RequiredOptionValue, oActualError.ErrorType);
-      Assert.AreEqual("required2", oActualError.ItemName);
+        actualError = actual.Errors.Last();
+        actualError.ErrorType.ShouldBe(ParseErrorType.RequiredOptionValue);
+        actualError.ItemName.ShouldBe("required2");
     }
 
-    [TestMethod]
+    [Test]
     public void Valid_Complex_Required_Option_Should_be_Parsed()
     {
-      SimpleRequiredConfig oConfig = new SimpleRequiredConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue1 = "http://192.168.1.2/root-path/";
+        var optionValue2 = 123;
+        var config = new SimpleRequiredConfig();
+        var parser = new ConsoleCommandLineParser();
 
-      string expected = "http://192.168.1.2/root-path/";
+        config.RequiredOption1 = null;
+        parser.ParseArguments(config, $@"-required1 ""{optionValue1}"" -required2 {optionValue2}");
+        config.RequiredOption1.ShouldBe(optionValue1);
+        config.RequiredOption2.ShouldBe(optionValue2);
 
-      oConfig.RequiredOption1 = null;
-      oParser.ParseArguments(oConfig, $@"-required1 ""{expected}"" -required2 123");
-      Assert.AreEqual(expected, oConfig.RequiredOption1);
-      Assert.AreEqual(123, oConfig.RequiredOption2);
+        config.RequiredOption1 = null;
+        parser.ParseArguments(config, $@"-required1:""{optionValue1}"" -required2:{optionValue2}");
+        config.RequiredOption1.ShouldBe(optionValue1);
+        config.RequiredOption2.ShouldBe(optionValue2);
 
-      oConfig.RequiredOption1 = null;
-      oParser.ParseArguments(oConfig, $@"-required1:""{expected}"" -required2:123");
-      Assert.AreEqual(expected, oConfig.RequiredOption1);
-      Assert.AreEqual(123, oConfig.RequiredOption2);
+        config.RequiredOption1 = null;
+        parser.ParseArguments(config, $@"/required1 ""{optionValue1}"" /required2 {optionValue2}");
+        config.RequiredOption1.ShouldBe(optionValue1);
+        config.RequiredOption2.ShouldBe(optionValue2);
 
-      oConfig.RequiredOption1 = null;
-      oParser.ParseArguments(oConfig, $@"/required1 ""{expected}"" /required2 123");
-      Assert.AreEqual(expected, oConfig.RequiredOption1);
-      Assert.AreEqual(123, oConfig.RequiredOption2);
-
-      oConfig.RequiredOption1 = null;
-      oParser.ParseArguments(oConfig, $@"/required1:""{expected}"" /required2:123");
-      Assert.AreEqual(expected, oConfig.RequiredOption1);
-      Assert.AreEqual(123, oConfig.RequiredOption2);
+        config.RequiredOption1 = null;
+        parser.ParseArguments(config, $@"/required1:""{optionValue1}"" /required2:123");
+        config.RequiredOption1.ShouldBe(optionValue1);
+        config.RequiredOption2.ShouldBe(optionValue2);
     }
-  }
 }

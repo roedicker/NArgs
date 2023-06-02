@@ -1,580 +1,551 @@
-using System;
+﻿using System;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
 using NArgs;
-using NArgs.Models;
-
 using NArgsTest.Data;
+using NUnit.Framework;
+using Shouldly;
 
-namespace NArgsTest
+namespace NArgsTest;
+
+[TestFixture]
+public class SimpleValidConfigTests
 {
-  [TestClass]
-  public class SimpleValidConfigTests
-  {
-    [TestMethod]
+    [Test]
     public void Valid_Bool_Options_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, "--help -v:yes");
 
-      oParser.ParseArguments(oConfig, "--help -v:yes");
-
-      Assert.AreEqual(true, oConfig.ShowHelpOption);
-      Assert.AreEqual(true, oConfig.VerboseMessagesOption);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.ShowHelpOption.ShouldBeTrue();
+        config.VerboseMessagesOption.ShouldBeTrue();
     }
 
-    [TestMethod]
+    [Test]
     public void Valid_Bool_Option_With_AlternativeName_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, "/?");
 
-      oParser.ParseArguments(oConfig, "/?");
-
-      Assert.AreEqual(true, oConfig.ShowHelpOption);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.ShowHelpOption.ShouldBeTrue();
     }
 
-    [TestMethod]
+    [Test]
     public void Valid_Bool_Option_With_AlternativeName_And_Value_Should_be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, "/?:yes");
 
-      oParser.ParseArguments(oConfig, "/?:yes");
-
-      Assert.AreEqual(true, oConfig.ShowHelpOption);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.ShowHelpOption.ShouldBeTrue();
     }
 
-    [TestMethod]
+    [Test]
     public void Valid_Bool_Option_With_AlternativeName_And_Alternative_Value_Should_be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, "/? false");
 
-      oParser.ParseArguments(oConfig, "/? false");
-
-      Assert.AreEqual(false, oConfig.ShowHelpOption);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.ShowHelpOption.ShouldBeFalse();
     }
 
-    [TestMethod]
+    [Test]
     public void Invalid_Bool_Option_Should_Be_Parsed_With_Error()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = "Nein";
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $"/h {optionValue}");
 
-      ParseResult actual = oParser.ParseArguments(oConfig, "/h Nein");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, actual.Errors.First().ErrorType);
-      Assert.AreEqual($@"Value ""Nein"" is invalid for option ""h""", actual.Errors.First().Message);
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.First().ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
+        result.Errors.First().Message.ShouldBe($@"Value ""{optionValue}"" is invalid for option ""h""");
     }
 
-    [TestMethod]
+    [Test]
     public void Invalid_Bool_Option_With_LongName_Should_Be_Parsed_With_Error()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = "Nein";
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $"--help {optionValue}");
 
-      ParseResult actual = oParser.ParseArguments(oConfig, "--help Nein");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, actual.Errors.First().ErrorType);
-      Assert.AreEqual($@"Value ""Nein"" is invalid for option ""help""", actual.Errors.First().Message);
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.First().ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
+        result.Errors.First().Message.ShouldBe($@"Value ""{optionValue}"" is invalid for option ""help""");
     }
 
-    [TestMethod]
+    [Test]
     public void Invalid_Bool_Option_With_AlternativeName_Should_Be_Parsed_With_Error()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = "Nein";
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $"/? {optionValue}");
 
-      ParseResult actual = oParser.ParseArguments(oConfig, "/? Nein");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, actual.Errors.First().ErrorType);
-      Assert.AreEqual($@"Value ""Nein"" is invalid for option ""?""", actual.Errors.First().Message);
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.First().ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
+        result.Errors.First().Message.ShouldBe($@"Value ""{optionValue}"" is invalid for option ""?""");
     }
 
-    [TestMethod]
-    public void Valid_Char_Option_With__Lowercase_Value_Should_Be_Parsed()
+    [Test]
+    [TestCase('a')]
+    [TestCase('A')]
+    [TestCase('1')]
+    public void Valid_Char_Option_Value_Should_Be_Parsed(char value)
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $"-c {value}");
 
-      oParser.ParseArguments(oConfig, "-c a");
-
-      Assert.AreEqual('a', oConfig.CharValueOption);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.CharValueOption.ShouldBe(value);
     }
 
-    [TestMethod]
-    public void Valid_Char_Option_With_Uppercase_Value_Should_be_Parsed()
+    [Test]
+    [TestCase("abc")]
+    [TestCase(123)]
+    public void Invalid_Char_Option_With_Invalid_Value_Should_Be_Parsed_With_Error(object value)
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $"-c {value}");
 
-      oParser.ParseArguments(oConfig, "-c A");
-
-      Assert.AreEqual('A', oConfig.CharValueOption);
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.First().ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
     }
 
-    [TestMethod]
-    public void Valid_Char_Option_With_Single_Numeric_Value_Should_Be_Parsed()
+    [Test]
+    public void Valid_String_Option_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = "Example Name";
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"-s:""{optionValue}""");
 
-      oParser.ParseArguments(oConfig, "-c 1");
-
-      Assert.AreEqual('1', oConfig.CharValueOption);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.StringValueOption.ShouldBe(optionValue);
     }
 
-    [TestMethod]
-    public void Invalid_Char_Option_With_String_Value_Should_Be_Parsed_With_Error()
+    [Test]
+    public void Valid_Int16_Option_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = (short)32767;
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"-i16 {optionValue}");
 
-      ParseResult actual = oParser.ParseArguments(oConfig, "-c abc");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, actual.Errors.First().ErrorType);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.Int16ValueOption.ShouldBe(optionValue);
     }
 
-    [TestMethod]
-    public void Invalid_Char_Option_With_Long_Numeric_Value_Should_Be_Parsed_With_Error()
+    [Test]
+    public void Invalid_Int16_Option_Should_Be_Parsed_With_Error()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = 32768;
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"-i16 {optionValue}");
 
-      ParseResult actual = oParser.ParseArguments(oConfig, "-c 123");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, actual.Errors.First().ErrorType);
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.First().ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
     }
 
-    [TestMethod]
-    public void Valid_String_Option_Shoud_Be_Parsed()
+    [Test]
+    public void Valid_Int32_Option_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = 32768;
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"-i {optionValue}");
 
-      oParser.ParseArguments(oConfig, @"-s:""Example Name""");
-
-      Assert.AreEqual("Example Name", oConfig.StringValueOption);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.Int32ValueOption.ShouldBe(optionValue);
     }
 
-    [TestMethod]
-    public void Valid_Int16_Option_Shoud_Be_Parsed()
+    [Test]
+    [TestCase(1.23D)]
+    [TestCase("abc")]
+    public void Invalid_Int32_Option_Should_Be_Parsed_With_Error(object value)
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"-i {value}");
 
-      oParser.ParseArguments(oConfig, @"-i16 32767");
-
-      Assert.AreEqual(32767, oConfig.Int16ValueOption);
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.First().ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
     }
 
-    [TestMethod]
-    public void Invalid_Int16_Option_Shoud_Be_Parsed_With_Error()
+    [Test]
+    public void Valid_Int64_Option_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = 1234567890L;
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"-l {optionValue}");
 
-      ParseResult actual = oParser.ParseArguments(oConfig, @"-i16 32768");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, actual.Errors.First().ErrorType);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.Int64ValueOption.ShouldBe(optionValue);
     }
 
-    [TestMethod]
-    public void Valid_Int32_Option_Shoud_Be_Parsed()
+    [Test]
+    [TestCase(1.23D)]
+    [TestCase("abc")]
+    public void Invalid_Int64_Option_Should_Be_Parsed_With_Error(object value)
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"-l {value}");
 
-      oParser.ParseArguments(oConfig, @"-i 123");
-
-      Assert.AreEqual(123, oConfig.Int32ValueOption);
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.First().ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
     }
 
-    [TestMethod]
-    public void Invalid_Int32_Option_Shoud_Be_Parsed_With_Error()
+    [Test]
+    public void Valid_DateTime_Option_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = "1970-04-01 10:43:28";
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"--date ""{optionValue}""");
 
-      ParseResult actual = oParser.ParseArguments(oConfig, @"-i 1.0");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, actual.Errors.First().ErrorType);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.DateValueOption.ShouldBe(DateTime.Parse(optionValue));
     }
 
-    [TestMethod]
-    public void Valid_Int64_Option_Shoud_Be_Parsed()
+    [Test]
+    public void Valid_Double_Option_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = 3.14159265358979D;
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, string.Create(parser.Options.Culture, $@"--double {optionValue}"));
 
-      oParser.ParseArguments(oConfig, @"-l 1234567890");
-
-      Assert.AreEqual(1234567890, oConfig.Int64ValueOption);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.DoubleValueOption.ShouldBe(optionValue);
     }
 
-    [TestMethod]
-    public void Invalid_Int64_Option_Shoud_Be_Parsed_With_Error()
+    [Test]
+    public void Invalid_Double_Option_Should_Be_Parsed_With_Error()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"--double a");
 
-      ParseResult actual = oParser.ParseArguments(oConfig, @"-l abc");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, actual.Errors.First().ErrorType);
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.First().ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
     }
 
-    [TestMethod]
-    public void Valid_DateTime_Option_Shoud_Be_Parsed()
+    [Test]
+    public void Valid_FileInfo_Option_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, @"-file ""C:\Windows\explorer.exe""");
 
-      oParser.ParseArguments(oConfig, @"--date ""1970-04-01 10:43:28""");
-
-      Assert.AreEqual(DateTime.Parse("1970-04-01 10:43:28"), oConfig.DateValueOption);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.FileInfoValueOption.ShouldNotBeNull();
     }
 
-    [TestMethod]
-    public void Valid_Double_Option_Shoud_Be_Parsed()
+    [Test]
+    public void Valid_Directory_Info_Option_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, @"-dir "".\""");
 
-      // set / restore current thread's culture due to culture-depending notation
-      CultureInfo oCurrentCulture = Thread.CurrentThread.CurrentCulture;
-
-      try
-      {
-        oParser.ParseArguments(oConfig, $@"--double {3.14159265358979}");
-
-        Assert.AreEqual((double)3.14159265358979, oConfig.DoubleValueOption);
-      }
-      finally
-      {
-        Thread.CurrentThread.CurrentCulture = oCurrentCulture;
-      }
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.DirInfoValueOption.ShouldNotBeNull();
     }
 
-    [TestMethod]
-    public void Invalid_Double_Option_Shoud_Be_Parsed_With_Error()
+    [Test]
+    public void Valid_Parameters_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var firstParameterValue = "First Parameter Value";
+        var secondParameterValue = "Second Parameter Value";
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"""{firstParameterValue}"" ""{secondParameterValue}""");
 
-      ParseResult actual = oParser.ParseArguments(oConfig, $@"--double a");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, actual.Errors.First().ErrorType);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.TextValueParameter1.ShouldBe(firstParameterValue);
+        config.TextValueParameter2.ShouldBe(secondParameterValue);
     }
 
-    [TestMethod]
-    public void Valid_FileInfo_Option_Shoud_Be_Parsed()
+    [Test]
+    public void Valid_Mixed_Arguments_With_Correct_Sequence_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var firstParameterValue = "First Parameter Value";
+        var secondParameterValue = "Second Parameter Value";
+        var optionValue = 123;
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"""{firstParameterValue}"" ""{secondParameterValue}"" --verbose:yes -i:{optionValue}");
 
-      oParser.ParseArguments(oConfig, @"-file ""C:\Windows\explorer.exe""");
-
-      Assert.IsNotNull(oConfig.FileInfoValueOption);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.TextValueParameter1.ShouldBe(firstParameterValue);
+        config.TextValueParameter2.ShouldBe(secondParameterValue);
+        config.VerboseMessagesOption.ShouldBeTrue();
+        config.Int32ValueOption.ShouldBe(optionValue);
     }
 
-    [TestMethod]
-    public void Valid_Directory_Info_Option_Shoud_Be_Parsed()
+    [Test]
+    public void Invalid_Mixed_Arguments_With_Incorrect_Sequence_Should_Be_Parsed_With_Error()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var firstParameterValue = "First Parameter Value";
+        var secondParameterValue = "Second Parameter Value";
+        var optionName = "verbose";
+        var optionValue = 123;
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"--{optionName} ""{firstParameterValue}"" ""{secondParameterValue}"" -i {optionValue} ");
 
-      oParser.ParseArguments(oConfig, @"-dir ""C:\Windows""");
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.Count().ShouldBe(2);
 
-      Assert.IsNotNull(oConfig.DirInfoValueOption);
+        var actualError = result.Errors.First();
+        actualError.ErrorType.ShouldBe(ParseErrorType.InvalidCommandArgsFormat);
+        actualError.ItemName.ShouldBe(secondParameterValue);
+
+        actualError = result.Errors.Last();
+        actualError.ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
+        actualError.ItemName.ShouldBe(optionName);
+        actualError.ItemValue.ShouldBe(firstParameterValue);
     }
 
-    [TestMethod]
-    public void Valid_Parameters_Shoud_Be_Parsed()
+    [Test]
+    public void Invalid_Mixed_Arguments_With_Alternative_Incorrect_Sequence_Should_Be_Parsed_With_Error()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var firstParameterValue = "First Parameter Value";
+        var secondParameterValue = "Second Parameter Value";
+        var optionName = "verbose";
+        var optionValue = 123;
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"""{firstParameterValue}"" /i:{optionValue} --{optionName} ""{secondParameterValue}""");
 
-      oParser.ParseArguments(oConfig, @"""First Parameter Value"" ""Second Parameter Value""");
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.Count().ShouldBe(1);
 
-      Assert.AreEqual("First Parameter Value", oConfig.TextValueParameter1);
-      Assert.AreEqual("Second Parameter Value", oConfig.TextValueParameter2);
+        var actualError = result.Errors.First();
+        actualError.ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
+        actualError.ItemName.ShouldBe(optionName);
+        actualError.ItemValue.ShouldBe(secondParameterValue);
     }
 
-    [TestMethod]
-    public void Valid_Mixed_Arguments_With_Correct_Sequence_Shoud_Be_Parsed()
+    [Test]
+    public void Invalid_FileInfo_Option_Should_Be_Parsed_With_Error()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionName = "file";
+        var optionValue = "?;";
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"-{optionName} ""{optionValue}""");
 
-      oParser.ParseArguments(oConfig, @"""First Parameter Value"" ""Second Parameter Value"" --verbose:yes -i:123");
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.Count().ShouldBe(1);
 
-      Assert.AreEqual("First Parameter Value", oConfig.TextValueParameter1);
-      Assert.AreEqual("Second Parameter Value", oConfig.TextValueParameter2);
-      Assert.AreEqual(true, oConfig.VerboseMessagesOption);
-      Assert.AreEqual(123, oConfig.Int32ValueOption);
+        var actualError = result.Errors.First();
+        actualError.ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
+        actualError.ItemName.ShouldBe(optionName);
+        actualError.ItemValue.ShouldBe(optionValue);
     }
 
-    [TestMethod]
-    public void Invalid_Mixed_Arguments_With_Incorrect_Sequence_Shoud_Be_Parsed_With_Error()
+    [Test]
+    public void Valid_Custom_DataType_Option_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
-      ParseResult actual;
-      ParseError oActualError;
+        const string none = "None";
+        const string red = "Red";
+        const string yellow = "Yellow";
+        const string green = "Green";
+        var optionValue = Color.Green;
+        var config = new CustomDataTypeConfig();
+        var parser = new ConsoleCommandLineParser();
 
-      actual = oParser.ParseArguments(oConfig, @"--verbose ""First Parameter Value"" ""Second Parameter Value"" -i 123 ");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(2, actual.Errors.Count());
-
-      oActualError = actual.Errors.First();
-      Assert.AreEqual(ParseErrorType.InvalidCommandArgsFormat, oActualError.ErrorType);
-      Assert.AreEqual("Second Parameter Value", oActualError.ItemName);
-
-      oActualError = actual.Errors.Last();
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, oActualError.ErrorType);
-      Assert.AreEqual("verbose", oActualError.ItemName);
-      Assert.AreEqual("First Parameter Value", oActualError.ItemValue);
-    }
-
-    [TestMethod]
-    public void Invalid_Mixed_Arguments_With_Alternative_Incorrect_Sequence_Shoud_Be_Parsed_With_Error()
-    {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
-      ParseResult actual;
-      ParseError oActualError;
-
-      actual = oParser.ParseArguments(oConfig, @"""First Parameter Value"" /i:123 --verbose ""Second Parameter Value""");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(1, actual.Errors.Count());
-
-      oActualError = actual.Errors.First();
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, oActualError.ErrorType);
-      Assert.AreEqual("verbose", oActualError.ItemName);
-      Assert.AreEqual("Second Parameter Value", oActualError.ItemValue);
-    }
-
-    [TestMethod]
-    public void Invalid_FileInfo_Option_Shoud_Be_Parsed_With_Error()
-    {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
-      ParseResult actual;
-
-      actual = oParser.ParseArguments(oConfig, @"-file ""?;""");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(1, actual.Errors.Count());
-
-      ParseError oActualError = actual.Errors.First();
-
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, oActualError.ErrorType);
-      Assert.AreEqual("file", oActualError.ItemName);
-      Assert.AreEqual("?;", oActualError.ItemValue);
-    }
-
-    [TestMethod]
-    public void Valid_Custom_DataType_Option_Shoud_Be_Parsed()
-    {
-      CustomDataTypeConfig oConfig = new CustomDataTypeConfig();
-
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
-      oParser.RegisterCustomDataTypeHandler(typeof(Color), (name, value) =>
-      {
-        switch (value)
+        parser.RegisterCustomDataTypeHandler(typeof(Color), (name, value) =>
         {
-          case "Red":
-            return Color.Red;
+            return value switch
+            {
+                red => Color.Red,
+                yellow => Color.Yellow,
+                green => Color.Green,
+                _ => Color.None,
+            };
+        },
 
-          case "Yellow":
-            return Color.Yellow;
+        (name, value, required) =>
+        {
+            return new string[] { none, red, yellow, green }.Contains(value);
+        });
 
-          case "Green":
-            return Color.Green;
+        var result = parser.ParseArguments(config, $@"-color ""{optionValue}""");
 
-          default:
-            return Color.None;
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.Color.ShouldBe(optionValue);
+    }
+
+    [Test]
+    public void Valid_Single_Option_Should_Be_Parsed()
+    {
+        var optionValue = (float)3.402823E+38;
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+
+        // set / restore current thread's culture due to culture-depending notation
+        var currentCulture = Thread.CurrentThread.CurrentCulture;
+
+        try
+        {
+            Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
+
+            var result = parser.ParseArguments(config, $@"--single {optionValue}");
+
+            result.Status.ShouldBe(ResultStatus.Success);
+            config.SingleValueOption.ShouldBe(optionValue);
         }
-      },
-
-      (name, value, required) =>
-      {
-        return new string[] { "None", "Red", "Yellow", "Green" }.Contains(value);
-      });
-
-      oParser.ParseArguments(oConfig, @"-color ""Green""");
-
-      Assert.AreEqual(Color.Green, oConfig.Color);
+        finally
+        {
+            Thread.CurrentThread.CurrentCulture = currentCulture;
+        }
     }
 
-    [TestMethod]
-    public void Valid_Single_Option_Shoud_Be_Parsed()
+    [Test]
+    public void Invalid_Single_Option_With_Exceeding_Value_Should_Be_Parsed_As_Infinity()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, string.Create(parser.Options.Culture, $@"--single {3.402823E+39}"));
 
-      // set / restore current thread's culture due to culture-depending notation
-      CultureInfo oCurrentCulture = Thread.CurrentThread.CurrentCulture;
-
-      try
-      {
-        Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
-
-        oParser.ParseArguments(oConfig, $@"--single {3.402823E+38}");
-
-        Assert.AreEqual((float)3.402823E+38, oConfig.SingleValueOption);
-      }
-      finally
-      {
-        Thread.CurrentThread.CurrentCulture = oCurrentCulture;
-      }
+        result.Status.ShouldBe(ResultStatus.Success);
+        float.IsInfinity(config.SingleValueOption).ShouldBeTrue();
     }
 
-    [TestMethod]
-    public void Invalid_Single_Option_With_Exceeding_Value_Shoud_Be_Parsed_With_Error()
-    {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
-
-      Thread.CurrentThread.CurrentCulture = CultureInfo.GetCultureInfo("en-US");
-      ParseResult actual = oParser.ParseArguments(oConfig, $@"--single {3.402823E+39}");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, actual.Errors.First().ErrorType);
-    }
-
-    [TestMethod]
+    [Test]
     public void Parse_Valid_UInt16_Long_Option()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = (ushort)65535;
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"-ui16 {optionValue}");
 
-      oParser.ParseArguments(oConfig, @"-ui16 65535");
-
-      Assert.AreEqual((ushort)65535, oConfig.UInt16ValueOption);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.UInt16ValueOption.ShouldBe(optionValue);
     }
 
-    [TestMethod]
-    public void Invalid_UInt16_With_Exceeding_Value_Option_Shoud_Be_Parsed_With_Error()
+    [Test]
+    public void Invalid_UInt16_With_Exceeding_Value_Option_Should_Be_Parsed_With_Error()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, @"-ui16 65536");
 
-      ParseResult actual = oParser.ParseArguments(oConfig, @"-ui16 65536");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, actual.Errors.First().ErrorType);
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.First().ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
     }
 
-    [TestMethod]
-    public void Valid_UInt32_Option_Shoud_Be_Parsed()
+    [Test]
+    public void Valid_UInt32_Option_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = (ushort)65535;
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"-ui32 {optionValue}");
 
-      oParser.ParseArguments(oConfig, @"-ui32 65536");
-
-      Assert.AreEqual((uint)65536, oConfig.UInt32ValueOption);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.UInt32ValueOption.ShouldBe(optionValue);
     }
 
-    [TestMethod]
-    public void Invalid_UInt32_With_Exceeding_Value_Option_Shoud_Be_Parsed_With_Error()
+    [Test]
+    public void Invalid_UInt32_With_Exceeding_Value_Option_Should_Be_Parsed_With_Error()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = 4294967296;
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"-ui32 {optionValue}");
 
-      ParseResult actual = oParser.ParseArguments(oConfig, @"-ui32 4294967296");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, actual.Errors.First().ErrorType);
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.First().ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
     }
 
-    [TestMethod]
-    public void Valid_UInt64_Option_Shoud_Be_Parsed()
+    [Test]
+    public void Valid_UInt64_Option_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = (ulong)131072;
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"-ui64 {optionValue}");
 
-      oParser.ParseArguments(oConfig, @"-ui64 131072");
-
-      Assert.AreEqual((ulong)131072, oConfig.UInt64ValueOption);
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.UInt64ValueOption.ShouldBe(optionValue);
     }
 
-    [TestMethod]
-    public void Invalid_UInt64_Option_Shoud_Be_Parsed_With_Error()
+    [Test]
+    public void Invalid_UInt64_Option_Should_Be_Parsed_With_Error()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, @"-ui64 -1");
 
-      ParseResult actual = oParser.ParseArguments(oConfig, @"-ui64 -1");
-
-      Assert.AreEqual(ResultStatus.Failure, actual.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, actual.Errors.First().ErrorType);
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.First().ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
     }
 
-    [TestMethod]
-    public void Complex_String_Option_Shoud_Be_Parsed()
+    [Test]
+    public void Complex_String_Option_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = "http://192.168.1.2/root-path/";
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
 
-      string expected = "http://192.168.1.2/root-path/";
+        config.StringValueOption = null;
+        var result = parser.ParseArguments(config, $@"-s ""{optionValue}""");
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.StringValueOption.ShouldBe(optionValue);
 
-      oConfig.StringValueOption = null;
-      oParser.ParseArguments(oConfig, $@"-s ""{expected}""");
-      Assert.AreEqual(expected, oConfig.StringValueOption);
+        config.StringValueOption = null;
+        result = parser.ParseArguments(config, $@"-s:""{optionValue}""");
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.StringValueOption.ShouldBe(optionValue);
 
-      oConfig.StringValueOption = null;
-      oParser.ParseArguments(oConfig, $@"-s:""{expected}""");
-      Assert.AreEqual(expected, oConfig.StringValueOption);
+        config.StringValueOption = null;
+        result = parser.ParseArguments(config, $@"/s ""{optionValue}""");
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.StringValueOption.ShouldBe(optionValue);
 
-      oConfig.StringValueOption = null;
-      oParser.ParseArguments(oConfig, $@"/s ""{expected}""");
-      Assert.AreEqual(expected, oConfig.StringValueOption);
-
-      oConfig.StringValueOption = null;
-      oParser.ParseArguments(oConfig, $@"/s:""{expected}""");
-      Assert.AreEqual(expected, oConfig.StringValueOption);
+        config.StringValueOption = null;
+        result = parser.ParseArguments(config, $@"/s:""{optionValue}""");
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.StringValueOption.ShouldBe(optionValue);
     }
 
-    [TestMethod]
-    public void Valid_Uri_Option_Shoud_Be_Parsed()
+    [Test]
+    public void Valid_Uri_Option_Should_Be_Parsed()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var optionValue = "http://example.com/root/";
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"/uri ""{optionValue}""");
 
-      string expected = "http://example.com/root/";
-      ParseResult oResult = oParser.ParseArguments(oConfig, $@"/uri ""{expected}""");
-
-      Assert.AreEqual(ResultStatus.Success, oResult.Status);
-      Assert.AreEqual(expected, oConfig.UriOptionValue.ToString());
+        result.Status.ShouldBe(ResultStatus.Success);
+        config.UriOptionValue.ToString().ShouldBe(optionValue);
     }
 
-    [TestMethod]
-    public void Invalid_Uri_Option_Shoud_Be_Parsed_With_Error()
+    [Test]
+    public void Invalid_Uri_Option_Should_Be_Parsed_With_Error()
     {
-      SimpleValidConfig oConfig = new SimpleValidConfig();
-      ConsoleCommandLineParser oParser = new ConsoleCommandLineParser();
+        var config = new SimpleValidConfig();
+        var parser = new ConsoleCommandLineParser();
+        var result = parser.ParseArguments(config, $@"/uri ""C:\\Root\\Folder""");
 
-      ParseResult oResult = oParser.ParseArguments(oConfig, $@"/uri ""C:\\Root\\Folder""");
-
-      Assert.AreEqual(ResultStatus.Failure, oResult.Status);
-      Assert.AreEqual(ParseErrorType.InvalidOptionValue, oResult.Errors.First().ErrorType);
+        result.Status.ShouldBe(ResultStatus.Failure);
+        result.Errors.First().ErrorType.ShouldBe(ParseErrorType.InvalidOptionValue);
     }
-  }
 }

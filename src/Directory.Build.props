@@ -2,7 +2,7 @@
   <PropertyGroup>
     <Authors>Mark Rödicker</Authors>
     <Owners>Mark Rödicker</Owners>
-    <Copyright>Copyright © 2016-2020 Mark Rödicker</Copyright>
+    <Copyright>Copyright © 2016-2023 Mark Rödicker</Copyright>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>

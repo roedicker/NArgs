@@ -1,12 +1,11 @@
 using System;
 
-namespace NArgsTest.Data
+namespace NArgsTest.Data;
+
+public enum Color
 {
-  public enum Color
-  {
-    None,
-    Red,
-    Green,
-    Yellow
-  }
+None,
+Red,
+Green,
+Yellow
 }

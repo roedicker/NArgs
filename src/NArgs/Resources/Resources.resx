@@ -120,8 +120,17 @@
   <data name="ArgumentsNotProcessedErrorMessage" xml:space="preserve">
     <value>Arguments not processed</value>
   </data>
+  <data name="CommandDoesNotExistErrorMessage" xml:space="preserve">
+    <value>Command with that given name does not exist</value>
+  </data>
+  <data name="CommandsCapitalizedName" xml:space="preserve">
+    <value>COMMANDS</value>
+  </data>
   <data name="MissingRequiredParameterValueErrorMessage" xml:space="preserve">
     <value>Missing required parameter value</value>
+  </data>
+  <data name="MultipleCommandsUsedErrorMessage" xml:space="preserve">
+    <value>Multiple commands used</value>
   </data>
   <data name="NotApplicableValue" xml:space="preserve">
     <value>n/a</value>
@@ -138,11 +147,17 @@
   <data name="OptionsCapitalizedName" xml:space="preserve">
     <value>OPTIONS</value>
   </data>
+  <data name="OptionUsageTypeDisplayName" xml:space="preserve">
+    <value>option</value>
+  </data>
   <data name="ParametersCapitalizedName" xml:space="preserve">
     <value>PARAMETERS</value>
   </data>
   <data name="ParametersMustPrecedeAnyOptionsErrorMessage" xml:space="preserve">
     <value>Parameters must precede any options</value>
+  </data>
+  <data name="ParametersNotAllowedBesideCommandsErrorMessage" xml:space="preserve">
+    <value>Parameters not allowed beside commands</value>
   </data>
   <data name="PropertyDoesNotHaveAnOptionAttributeErrorMessage" xml:space="preserve">
     <value>Property does not have an option attribute</value>
@@ -155,6 +170,9 @@
   </data>
   <data name="SyntaxCapitalizedName" xml:space="preserve">
     <value>SYNTAX</value>
+  </data>
+  <data name="UnknownErrorMessage" xml:space="preserve">
+    <value>Unknown error</value>
   </data>
   <data name="ValueIsInvalidForOptionFormatErrorMessage" xml:space="preserve">
     <value>Value "{0}" is invalid for option "{1}"</value>

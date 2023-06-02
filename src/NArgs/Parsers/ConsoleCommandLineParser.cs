@@ -1,76 +1,78 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using NArgs.Models;
 using NArgs.Services;
 
-namespace NArgs
+namespace NArgs;
+
+/// <summary>
+/// Defines the console command line argument parser.
+/// </summary>
+public class ConsoleCommandLineParser : CommandLineParser, IArgumentParser
 {
-  /// <summary>
-  /// Defines the console command line argument parser
-  /// </summary>
-  public class ConsoleCommandLineParser : CommandLineParser, IArgumentParser
-  {
+    /// <inheritdoc />
+    public override ParseOptions Options { get; }
+
     /// <summary>
-    /// Gets the argument parse options
+    /// Creates a new instance of the console command line argument parser.
     /// </summary>
-    protected ParseOptions Options
+    public ConsoleCommandLineParser() : base(new PropertyService(), new ConsoleArgumentTokenizer())
     {
-      get;
+        Options = new ParseOptions();
     }
 
     /// <summary>
-    /// Creates a new instance of the console command line argument parser
+    /// Creates a new instance of the console command line argument parser with custom parse options.
     /// </summary>
-    public ConsoleCommandLineParser() : base(new DefaultPropertyService(), new ConsoleArgumentTokenizer())
+    public ConsoleCommandLineParser(ParseOptions options) : base(new PropertyService(options), new ConsoleArgumentTokenizer(options))
     {
-      this.Options = new ParseOptions();
+        Options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
-    /// <summary>
-    /// Creates a new instance of the console command line argument parser with custom parse options
-    /// </summary>
-    public ConsoleCommandLineParser(ParseOptions options) : base(new DefaultPropertyService(options), new ConsoleArgumentTokenizer(options))
-    {
-      this.Options = options ?? throw new ArgumentNullException(nameof(options));
-    }
-
-    /// <summary>
-    /// Parses arguments based on configuration and an argument array
-    /// </summary>
-    /// <param name="config">Argument configuration</param>
-    /// <param name="args">Arguments</param>
-    /// <returns>Parse result for given arguments</returns>
+    /// <inheritdoc />
     public ParseResult ParseArguments(object config, string[] args)
     {
-      this.Tokenizer.Tokenize(args ?? throw new ArgumentNullException(nameof(args)));
-      this.PropertyService.Init(config ?? throw new ArgumentNullException(nameof(config)));
+        Tokenizer.Tokenize(args ?? throw new ArgumentNullException(nameof(args)));
+        PropertyService.Init(config ?? throw new ArgumentNullException(nameof(config)));
 
-      return this.ParseCommandLine();
+        return ParseCommandLine();
     }
 
-    /// <summary>
-    /// Parses arguments based on configuration and arguments command line
-    /// </summary>
-    /// <param name="config">Argument configuration</param>
-    /// <param name="args">Arguments</param>
-    /// <returns></returns>
+    /// <inheritdoc />
     public ParseResult ParseArguments(object config, string args)
     {
-      this.Tokenizer.Tokenize(Tokenize(args ?? throw new ArgumentNullException(nameof(args)), this.Options.ArgumentQuotationCharacter, this.Options.ArgumentDefaultSeparatorCharacter));
-      this.PropertyService.Init(config ?? throw new ArgumentNullException(nameof(config)));
+        Tokenizer.Tokenize(Tokenize(args ?? throw new ArgumentNullException(nameof(args)), Options.ArgumentQuotationCharacter, Options.ArgumentDefaultSeparatorCharacter));
+        PropertyService.Init(config ?? throw new ArgumentNullException(nameof(config)));
 
-      return this.ParseCommandLine();
+        return ParseCommandLine();
     }
 
-    /// <summary>
-    /// Registers a handler for a custom data-type property
-    /// </summary>
-    /// <param name="type">Data-type to be handled</param>
-    /// <param name="setter">Setter of the custom data-type</param>
-    /// <param name="validator">Validator of the custom data-type</param>
-    public void RegisterCustomDataTypeHandler(Type type, PropertyServiceCustomDataTypeGetter setter, PropertyServiceCustomDataTypeValidator validator)
+    /// <inheritdoc />
+    public ParseResult ParseArguments(object config,
+        string args,
+        CommandAction commandAction)
     {
-      this.AddCustomDataTypeHandler(type, setter, validator);
+        CommandAction = commandAction;
+
+        return ParseArguments(config, args);
+    }
+
+    /// <inheritdoc />
+    public ParseResult ParseArguments(object config,
+        string[] args,
+        CommandAction commandAction)
+    {
+        CommandAction = commandAction;
+
+        return ParseArguments(config, args);
+    }
+
+    /// <inheritdoc />
+    public void RegisterCustomDataTypeHandler(Type type,
+        PropertyServiceCustomDataTypeGetter setter,
+        PropertyServiceCustomDataTypeValidator validator)
+    {
+        AddCustomDataTypeHandler(type, setter, validator);
     }
 
     /// <summary>
@@ -79,81 +81,79 @@ namespace NArgs
     /// <param name="type">Data-type to be handled</param>
     /// <param name="setter">Setter of the custom data-type</param>
     /// <param name="validator">Validator of the custom data-type</param>
-    internal void AddCustomDataTypeHandler(Type type, PropertyServiceCustomDataTypeGetter setter, PropertyServiceCustomDataTypeValidator validator)
+    internal void AddCustomDataTypeHandler(Type type,
+        PropertyServiceCustomDataTypeGetter setter,
+        PropertyServiceCustomDataTypeValidator validator)
     {
-      this.PropertyService.AddCustomDataTypeHandler(type, setter, validator);
+        PropertyService.AddCustomDataTypeHandler(type, setter, validator);
+    }
+
+    /// <inheritdoc />
+    public string GetUsage(object config,
+        string executable,
+        string commandName = null)
+    {
+        Tokenizer.Tokenize(Tokenize(string.Empty));
+        PropertyService.Init(config);
+
+        return base.GetUsage(executable, commandName);
     }
 
     /// <summary>
-    /// Generates the output for the usage based on configuration
-    /// </summary>
-    /// <param name="config">Argument configuration</param>
-    /// <param name="executable">Name of the executable</param>
-    /// <returns></returns>
-    public string GetUsage(object config, string executable)
-    {
-      this.Tokenizer.Tokenize(Tokenize(String.Empty));
-      this.PropertyService.Init(config);
-
-      return base.GetUsage(executable);
-    }
-
-    /// <summary>
-    /// Tokenizes a string reagarding quoted parts.
+    /// Tokenizes a string regarding quoted parts.
     /// </summary>
     /// <param name="s">String to be tokenized.</param>
     /// <param name="quoteChar">Quote control character.</param>
-    /// <param name="separator">Additional seperator (beside space and tabulator).</param>
+    /// <param name="separator">Additional separator (beside space and tabulator).</param>
     /// <returns>string enumeration with all found string tokens.</returns>
     private string[] Tokenize(string s, char quoteChar = '"', char separator = ' ')
     {
-      List<string> Result = new List<string>();
-      System.Text.StringBuilder sbToken = new System.Text.StringBuilder();
+        var result = new List<string>();
+        var tokenBuilder = new System.Text.StringBuilder();
+        var isQuote = false;
 
-      char[] aChars = s.ToCharArray();
-      bool bInQuote = false;
-
-      foreach (char cChar in aChars)
-      {
-        if (cChar == ' ' || cChar == (char)9 || cChar == separator)
+        foreach (var c in s.ToCharArray())
         {
-          // spaces, tabs and (optional) an additional delimeter
-          // separates the tokens: only if not quoted
-          if (!bInQuote)
-          {
-            // only create a new token if current entry is not empty. This
-            // can occur if several seperators appear in a sequence
-            if (sbToken.Length > 0)
+            if (c == ' ' ||
+                c == (char)9 ||
+                c == separator)
             {
-              Result.Add(sbToken.ToString());
-              sbToken = new System.Text.StringBuilder();
+                // spaces, tabs and (optional) an additional delimiter
+                // separates the tokens: only if not quoted
+                if (!isQuote)
+                {
+                    // only create a new token if current entry is not empty. This
+                    // can occur if several separators appear in a sequence
+                    if (tokenBuilder.Length > 0)
+                    {
+                        result.Add(tokenBuilder.ToString());
+                        tokenBuilder = new System.Text.StringBuilder();
+                    }
+                }
+                else
+                {
+                    // if quoted, it is part of the token, so append it
+                    tokenBuilder.Append(c);
+                }
             }
-          }
-          else
-          {
-            // if quoted, it is part of the token, so append it
-            sbToken.Append(cChar);
-          }
+            else if (c == quoteChar)
+            {
+                // always add quote character to current token
+                tokenBuilder.Append(c);
+                isQuote = !isQuote;
+            }
+            else
+            {
+                tokenBuilder.Append(c);
+            }
         }
-        else if (cChar == quoteChar)
-        {
-          // always add quote character to current token
-          sbToken.Append(cChar);
-          bInQuote = !bInQuote;
-        }
-        else
-        {
-          sbToken.Append(cChar);
-        }
-      }
 
-      // add the last token to the collection - only if not empty
-      if (sbToken.Length > 0)
-      {
-        Result.Add(sbToken.ToString());
-      }
+        // add the last token to the collection - only if not empty
+        if (tokenBuilder.Length > 0)
+        {
+            result.Add(tokenBuilder.ToString());
+        }
 
-      return Result.ToArray();
+        return result.ToArray();
     }
-  }
 }

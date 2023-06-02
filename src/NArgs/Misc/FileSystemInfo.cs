@@ -1,98 +1,95 @@
-using System;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 
+namespace NArgs;
 
-namespace NArgs
+/// <summary>
+/// Provides information regarding the file-system.
+/// </summary>
+public static class FileSystemInfo
 {
-  /// <summary>
-  /// Provides informations regarding the file-system
-  /// </summary>
-  public static class FileSystemInfo
-  {
     /// <summary>
-    /// Gets an indicator whether a given name is a valid directory name or not
+    /// Gets an indicator whether a given name is a valid directory name.
     /// </summary>
-    /// <param name="name">Name to validate</param>
-    /// <returns><c>true</c> if the given name is valid, otherwise <c>false</c>.</returns>
+    /// <param name="name">Name to validate.</param>
+    /// <returns><see langword="true" /> if the given name is valid, otherwise <see langword="false" />.</returns>
     public static bool IsValidDirectoryName(string name)
     {
-      bool Result = true;
+        var result = true;
 
-      if (String.IsNullOrWhiteSpace(name))
-      {
-        Result = false;
-      }
-
-      if (Result == true)
-      {
-        string[] asNames = name.Split(Path.DirectorySeparatorChar);
-
-        for (int i = 0; i < asNames.Length - 1; i++)
+        if (string.IsNullOrWhiteSpace(name))
         {
-          foreach (char cChar in asNames[i])
-          {
-            if (Path.GetInvalidPathChars().Contains(cChar))
-            {
-              Result = false;
-              break;
-            }
-          }
-
-          if (Result == false)
-          {
-            break;
-          }
+            result = false;
         }
-      }
 
-      return Result;
+        if (result == true)
+        {
+            var separators = name.Split(Path.DirectorySeparatorChar);
+
+            for (var i = 0; i < separators.Length - 1; i++)
+            {
+                foreach (var c in separators[i])
+                {
+                    if (Path.GetInvalidPathChars().Contains(c))
+                    {
+                        result = false;
+                        break;
+                    }
+                }
+
+                if (result == false)
+                {
+                    break;
+                }
+            }
+        }
+
+        return result;
     }
 
     /// <summary>
-    /// Gets an indicator whether a given name is a valid file name or not
+    /// Gets an indicator whether a given name is a valid file name.
     /// </summary>
-    /// <param name="name">Name to validate</param>
-    /// <returns><c>true</c> if the given name is valid, otherwise <c>false</c>.</returns>
+    /// <param name="name">Name to validate.</param>
+    /// <returns><see langword="true" /> if the given name is valid, otherwise <see langword="false" />.</returns>
     public static bool IsValidFileName(string name)
     {
-      bool Result = true;
+        var result = true;
 
-      if (String.IsNullOrWhiteSpace(name))
-      {
-        Result = false;
-      }
-
-      if (Result == true)
-      {
-        string[] asNames = name.Split(Path.DirectorySeparatorChar);
-
-        for (int i = 0; i < asNames.Length; i++)
+        if (string.IsNullOrWhiteSpace(name))
         {
-          if (i < asNames.Length - 2)
-          {
-            Result = IsValidDirectoryName(asNames[i]);
-          }
-          else
-          {
-            foreach (char cChar in asNames[i])
-            {
-              if (Path.GetInvalidFileNameChars().Contains(cChar))
-              {
-                Result = false;
-                break;
-              }
-            }
-          }
-
-          if (Result == false)
-          {
-            break;
-          }
+            result = false;
         }
-      }
 
-      return Result;
+        if (result == true)
+        {
+            var separators = name.Split(Path.DirectorySeparatorChar);
+
+            for (var i = 0; i < separators.Length; i++)
+            {
+                if (i < separators.Length - 2)
+                {
+                    result = IsValidDirectoryName(separators[i]);
+                }
+                else
+                {
+                    foreach (var c in separators[i])
+                    {
+                        if (Path.GetInvalidFileNameChars().Contains(c))
+                        {
+                            result = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (result == false)
+                {
+                    break;
+                }
+            }
+        }
+
+        return result;
     }
-  }
 }
